@@ -61,7 +61,7 @@ stepSize=8; %default is 4
 
 %% Create System objects used for reading video, detecting moving objects,
 % and displaying the results.
-obj = setupSystemObjects('resource_allocation/dataset/cvpr10_tud_stadtmitte/cvpr10_tud_stadtmitte.avi');
+%obj = setupSystemObjects('resource_allocation/dataset/cvpr10_tud_stadtmitte/cvpr10_tud_stadtmitte.avi');
 v = VideoReader('resource_allocation/dataset/cvpr10_tud_stadtmitte/cvpr10_tud_stadtmitte.avi');
 frame_size = size(read(v,1));
 %% Initialize pedestrian detector
