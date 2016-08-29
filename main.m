@@ -4,7 +4,7 @@ close all
 addpath(genpath('resource_allocation'));
 
 % add detector (Dollar) stuff
-addpath(genpath('matlab'));
+addpath(genpath('lib'));
 
 % add images dir
 image_dir = 'data/train/MOT16-02/img1/';
