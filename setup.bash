@@ -41,12 +41,12 @@ function get_toolboxs
 	unzip piotr_toolbox.zip -d ../matlab/
 	echo "Downloading MOT toolbox"
 	wget https://motchallenge.net/data/devkit.zip
-	unzip devkit.zip -d ../matlab/mota
+	unzip devkit.zip -d ../matlab/mot
 	echo "Done"
 }
 
 sudo apt-get install unzip
-mkdir matlab/mota
+mkdir matlab/mot
 mkdir data/res
 mkdir downloads
 cd downloads
