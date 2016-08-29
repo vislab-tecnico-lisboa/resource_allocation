@@ -29,57 +29,31 @@ function get_labeling_code
 function get_datasets
 {
 	echo "Downloading datasets"
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set00.tar
-	tar xopf set00.tar
-        mv set00 ../matlab/vbb/data-USA/videos
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set01.tar
-	tar xopf set01.tar
-        mv set01 ../matlab/vbb/data-USA/videos
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set02.tar
-	tar xopf set02.tar
-        mv set02 ../matlab/vbb/data-USA/videos
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set03.tar
-	tar xopf set03.tar
-        mv set03 ../matlab/vbb/data-USA/videos
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set04.tar
-	tar xopf set04.tar
-        mv set04 ../matlab/vbb/data-USA/videos
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set05.tar
-	tar xopf set05.tar
-        mv set05 ../matlab/vbb/data-USA/videos
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set06.tar
-	tar xopf set06.tar
-        mv set06 ../matlab/vbb/data-USA/videos
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set07.tar
-	tar xopf set07.tar
-        mv set07 ../matlab/vbb/data-USA/videos
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set08.tar
-	tar xopf set08.tar
-        mv set08 ../matlab/vbb/data-USA/videos
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set09.tar
-	tar xopf set09.tar
-        mv set09 ../matlab/vbb/data-USA/videos
-	wget http://www.vision.caltech.edu/Image_Datasets/CaltechPedestrians/datasets/USA/set10.tar
-	tar xopf set10.tar
-        mv set10 ../matlab/vbb/data-USA/videos
+	wget https://motchallenge.net/data/MOT16.zip
+	unzip MOT16.zip -d ../data
     	echo "Done"
 }
 
-function get_toolbox
+function get_toolboxs
 {	
 	echo "Downloading piotr dollar toolbox"
 	wget https://pdollar.github.io/toolbox/archive/piotr_toolbox.zip
 	unzip piotr_toolbox.zip -d ../matlab/
+	echo "Downloading MOT toolbox"
+	wget https://motchallenge.net/data/devkit.zip
+	unzip devkit.zip -d ../matlab/mota
 	echo "Done"
 }
 
 sudo apt-get install unzip
+mkdir matlab/mota
+mkdir data/res
 mkdir downloads
 cd downloads
 rm -rf *
 
-get_toolbox
-
+get_toolboxs
+get_datasets
 
 
 cd ..

@@ -4,7 +4,7 @@ function obj = setupSystemObjects(filename)
 % objects in each frame, and playing the video.
 
 % Create a video file reader.
-obj.reader = vision.VideoFileReader(filename);
+%obj.reader = vision.VideoFileReader(filename);
 
 % Create two video players, one to display the video,
 % and one to display the foreground mask.
