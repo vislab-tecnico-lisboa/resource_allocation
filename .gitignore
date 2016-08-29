@@ -1,6 +1,8 @@
 *~
 downloads/*
-data/*
+data/test/*
+data/train/*
+data/res/*
 matlab/mot/*
 matlab/toolbox/*
 matlab/__MACOSX/*

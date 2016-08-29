@@ -61,11 +61,12 @@ nextId = 1; % ID of the next track
 detection_times=[];
 optimization_times=[];
 tracking_times=[];
+results=[];
 for frame_number=1:n_files
     %Load image
     frame = imread([image_dir image_files(frame_number).name]);
     
-    %% dynamic resource allocation
+    %% dynamic resource allocation (POMDP - input current belief; output actions)
     %     [rois,optimization_time]=imageProb(tracks,darap);
     %     optimization_times=[optimization_times optimization_time];
     %
@@ -79,14 +80,17 @@ for frame_number=1:n_files
     detection_centroids=[preBB(:,3)+preBB(:,5)*0.5 preBB(:,4)+preBB(:,6)*0.5];
       
     %% tracking
+    
     %predict
     tracks=predictNewLocationsOfTracks(tracks);
+    
     %associate
     [assignments, unassignedTracks, unassignedDetections] = ...
         detectionToTrackAssignment(tracks,...
         detection_centroids,...
         detection_bboxes,...
         costOfNonAssignmentState);
+    
     %update
     tracks=updateAssignedTracks(tracks,assignments,detection_centroids,detection_bboxes);
     tracks=updateUnassignedTracks(tracks,unassignedTracks);
@@ -108,11 +112,10 @@ for frame_number=1:n_files
     displayTrackingResults(obj,frame,tracks,detection_bboxes,minVisibleCount,rois);
     
     % store results
-    results=zeros(n_files,10);
     for i=1:length(tracks)
         conf=1;
         preResults = [frame_number, tracks(i).id, tracks(i).bbox(1), tracks(i).bbox(2), tracks(i).bbox(3), tracks(i).bbox(4), -1, -1, -1, -1];
-        results = [results; preResults];
+        results=[results; preResults];
     end
     
     str_disp = sprintf('processing frame %d of %d',frame_number,n_files);
@@ -124,7 +127,6 @@ average_detection_time=mean(detection_times);
 average_total_time=average_optimization_time+average_detection_time;
 average_frame_rate=1.0/average_total_time;
 
-
 %% The results must be wriiten in the MoTChallenge res/data/[datasetname.txt] for evaluation
 csvwrite('data/res/MOT16-02.txt', results);
 
@@ -133,5 +135,5 @@ csvwrite('data/res/MOT16-02.txt', results);
 %  seqmaps folder).
 %   2 - A directory containing the results
 %   3 - The benchmark directory
-allMets = evaluateTracking('all.txt', 'data/res', 'data/train/');
+allMets = evaluateTracking('all.txt', 'data/res/', 'data/train/');
 MOTA = allMets.bmark2d(12);
