@@ -9,9 +9,16 @@ MCTS Code Based on the Java (Simon Lucas - University of Essex) and Python (Pete
 #include "TreeNodeT.h"
 #include "MSALoopTimer.h"
 #include <cfloat>
-
+#include <queue>
 namespace msa {
 namespace mcts {
+
+
+
+struct timespec start, finish;
+double elapsed;
+
+
 
 // Belief must comply with Belief Interface (see IState.h)
 // Action can be anything (which your Belief class knows how to handle)
@@ -30,9 +37,7 @@ public:
     unsigned int simulation_depth;	// how many ticks (frames) to run simulation for
 
     //--------------------------------------------------------------
-    UCT(unsigned int iterations_=0, unsigned int max_iterations_=100, unsigned int max_millis_=0, unsigned int simulation_depth_=10) :
-        iterations(iterations_),
-        max_iterations( max_iterations_ ),
+    UCT(unsigned int max_millis_=0, unsigned int simulation_depth_=10) :
         max_millis( max_millis_ ),
         simulation_depth( simulation_depth_ ),
         uct_k( sqrt(2) )
@@ -44,128 +49,82 @@ public:
         return timer;
     }
 
-    const int get_iterations() const {
-        return iterations;
-    }
+    void depth_first_expand(TreeNode* node){
+        if(node->get_depth()>=simulation_depth)
+            return;
+        std::vector< Action > actions;
+        Belief belief(node->get_belief());
+        belief.get_actions(actions);
 
-    //--------------------------------------------------------------
-    // get best (immediate) child for given TreeNode based on uct score
-    TreeNode* get_best_uct_child(TreeNode* node, float uct_k) const {
-        // sanity check
-        if(!node->is_fully_expanded()) return NULL;
-
-        float best_utc_score = -std::numeric_limits<float>::max();
-        TreeNode* best_node = NULL;
-
-        // iterate all immediate children and find best UTC score
-        int num_children = node->get_num_children();
-        for(int i = 0; i < num_children; i++) {
-            TreeNode* child = node->get_child(i);
-            float uct_exploitation = (float)child->get_value() / (child->get_num_visits() + FLT_EPSILON);
-            float uct_exploration = sqrt( log((float)node->get_num_visits() + 1) / (child->get_num_visits() + FLT_EPSILON) );
-            float uct_score = uct_exploitation + uct_k * uct_exploration;
-
-            if(uct_score > best_utc_score) {
-                best_utc_score = uct_score;
-                best_node = child;
-            }
+        for(int i=0; i<actions.size();++i)
+        {
+            // 2. EXPAND by adding all actions (if not terminal or not fully expanded)
+            //if(!node->is_fully_expanded() && !node->is_terminal())
+            depth_first_expand(node->expand(actions[i]));
         }
-
-        return best_node;
     }
 
+    void breath_first_expand(TreeNode* node){
+        // Create a temporary queue to hold node pointers.
+        std::queue<TreeNode*> queue;
 
-    //--------------------------------------------------------------
-    TreeNode* get_most_visited_child(TreeNode* node) const {
-        int most_visits = -1;
-        TreeNode* best_node = NULL;
+        /*
+             * Gotta put something in the queue initially,
+             * so that we enter the body of the loop.
+             */
+        queue.push(node);
 
-        // iterate all immediate children and find most visited
-        int num_children = node->get_num_children();
-        for(int i = 0; i < num_children; i++) {
-            TreeNode* child = node->get_child(i);
-            if(child->get_num_visits() > most_visits) {
-                most_visits = child->get_num_visits();
-                best_node = child;
-            }
-        }
+        std::vector< Action > actions;
+        Belief belief(node->get_belief());
+        belief.get_actions(actions);
 
-        return best_node;
-    }
+        while (!queue.empty())
+        {
+            node=queue.front();
+            queue.pop();
 
-
-
-    //--------------------------------------------------------------
-    Action run(const Belief& current_belief, unsigned int seed = 1, std::vector<Belief>* explored_beliefs = nullptr) {
-        // initialize timer
-        timer.init();
-
-        // initialize root TreeNode with current belief
-        TreeNode root_node(current_belief);
-
-        TreeNode* best_node = NULL;
-
-        // iterate
-        iterations = 0;
-        while(true) {
-            // indicate start of loop
-            timer.loop_start();
-
-            // 1. SELECT. Start at root, dig down into tree using UCT on all fully expanded nodes
-            TreeNode* node = &root_node;
-            while(!node->is_terminal() && node->is_fully_expanded()) {
-                node = get_best_uct_child(node, uct_k);
-                //						assert(node);	// sanity check
-            }
-
-            // 2. EXPAND by adding a single child (if not terminal or not fully expanded)
-            if(!node->is_fully_expanded() && !node->is_terminal()) node = node->expand();
-
-            Belief belief(node->get_belief());
-
-            // 3. SIMULATE (if not terminal)
-            if(!node->is_terminal()) {
-                Action action;
-                for(int t = 0; t < simulation_depth; t++) {
-                    if(belief.is_terminal()) break;
-
-                    if(belief.get_random_action(action))
-                        belief.apply_action(action);
-                    else
-                        break;
+            if(node->get_depth()<simulation_depth)
+            {
+                for(int i=0; i<actions.size();++i)
+                {
+                    // 2. EXPAND by adding all actions (if not terminal or not fully expanded)
+                    queue.push(node->expand(actions[i]));
                 }
             }
-
-            // get rewards vector for all agents
-            const std::vector<float> rewards = belief.evaluate();
-
-            // add to history
-            if(explored_beliefs) explored_beliefs->push_back(belief);
-
-            // 4. BACK PROPAGATION
-            while(node) {
-                node->update(rewards);
-                node = node->get_parent();
-            }
-
-            // find most visited child
-            best_node = get_most_visited_child(&root_node);
-
-            // indicate end of loop for timer
-            timer.loop_end();
-
-            // exit loop if current total run duration (since init) exceeds max_millis
-            if(max_millis > 0 && timer.check_duration(max_millis)) break;
-
-            // exit loop if current iterations exceeds max_iterations
-            if(max_iterations > 0 && iterations > max_iterations) break;
-            iterations++;
         }
 
-        // return best node's action
-        if(best_node) return best_node->get_action();
+    }
 
-        // we shouldn't be here
+
+    //--------------------------------------------------------------
+    Action run(const std::vector<Belief>& current_belief) {
+        // initialize timer
+        clock_gettime(CLOCK_MONOTONIC, &start);
+        timer.init();
+
+        // For each tracker generate binary action tree
+        for(int i=0; i < current_belief.size(); ++i)
+        {
+            // initialize root TreeNode with current belief
+            TreeNode root_node(current_belief[i]);
+
+            TreeNode* best_node = NULL;
+
+
+            // Start at root, dig down into tree
+
+
+            TreeNode* node = &root_node;
+            //depth_first_expand(node);
+            breath_first_expand(node);
+        }
+
+        clock_gettime(CLOCK_MONOTONIC, &finish);
+        elapsed = (finish.tv_sec - start.tv_sec);
+        elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+
+        std::cout << "elapsed time: "<< elapsed << std::endl;
+
         return Action();
     }
 

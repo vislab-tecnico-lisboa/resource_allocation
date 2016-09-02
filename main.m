@@ -21,7 +21,7 @@ detections = csvread('data/train/MOT16-02/det/det.txt');
 %% tracking parameters
 
 %create/destroy parameters
-invisibleForTooLong = 10;
+invisibleForTooLong = 5;
 ageThreshold = 5;
 minVisibleCount = 3;
 

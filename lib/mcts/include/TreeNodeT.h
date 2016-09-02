@@ -30,6 +30,7 @@ namespace msa {
                 value(0),
                 depth(parent ? parent->depth + 1 : 0)
             {
+                //std::cout << "depth: "<<depth << std::endl;
             }
 
 
@@ -49,12 +50,22 @@ namespace msa {
                     belief.get_actions(actions);
 
                     // randomize the order
-                    std::random_shuffle(actions.begin(), actions.end());
+                    //std::random_shuffle(actions.begin(), actions.end());
                 }
-
                 // add the next action in queue as a child
                 return add_child_with_action( actions[children.size()] );
             }
+
+
+            //--------------------------------------------------------------
+            // expand by adding a single child
+            TreeNodeT* expand(const Action& new_action)
+            {
+                // add the next action in queue as a child
+                return add_child_with_action(new_action);
+            }
+
+
 
 
             //--------------------------------------------------------------

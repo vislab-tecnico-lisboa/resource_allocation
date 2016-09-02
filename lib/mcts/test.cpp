@@ -4,15 +4,14 @@
 #include "MSALoopTimer.h"
 int main(int argc, char** argv)
 {
-    tracking::Belief pedestrian_belief;
-    msa::LoopTimer timer;
-    unsigned int iterations=0;
-    unsigned int max_iterations=100;
+    std::vector<tracking::Belief> pedestrian_beliefs;
+    pedestrian_beliefs.resize(10);
+
     unsigned int max_millis=0;
-    unsigned int simulation_depth=10;
+    unsigned int simulation_depth=5;
 
-    msa::mcts::UCT<tracking::Belief, tracking::Action> uct(iterations,max_iterations, max_millis, simulation_depth);
-
+    msa::mcts::UCT<tracking::Belief, tracking::Action> uct(max_millis, simulation_depth);
+    uct.run(pedestrian_beliefs);
 
     return 0;
 }
