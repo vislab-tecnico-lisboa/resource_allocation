@@ -17,26 +17,25 @@ namespace tracking {
 
 class MyKalmanFilter : public cv::KalmanFilter
 {
-    public:
+public:
 
-        MyKalmanFilter( const MyKalmanFilter& other )
-        {
-            statePre=other.statePre.clone();           //!< predicted state (x'(k)): x(k)=A*x(k-1)+B*u(k)
-            statePost=other.statePost.clone();          //!< corrected state (x(k)): x(k)=x'(k)+K(k)*(z(k)-H*x'(k))
-            transitionMatrix=other.transitionMatrix.clone();   //!< state transition matrix (A)
-            measurementMatrix=other.measurementMatrix.clone();  //!< measurement matrix (H)
-            processNoiseCov=other.processNoiseCov.clone();    //!< process noise covariance matrix (Q)
-            measurementNoiseCov=other.measurementNoiseCov.clone();//!< measurement noise covariance matrix (R)
-            errorCovPre=other.errorCovPre.clone();        //!< priori error estimate covariance matrix (P'(k)): P'(k)=A*P(k-1)*At + Q)*/
-            gain=other.gain.clone();               //!< Kalman gain matrix (K(k)): K(k)=P'(k)*Ht*inv(H*P'(k)*Ht+R)
-            errorCovPost=other.errorCovPost.clone();       //!< posteriori error estimate covariance matrix (P(k)): P(k)=(I-K(k)*H)*P'(k)
+    MyKalmanFilter( const MyKalmanFilter& other )
+    {
+        statePre=other.statePre.clone();           //!< predicted state (x'(k)): x(k)=A*x(k-1)+B*u(k)
+        statePost=other.statePost.clone();          //!< corrected state (x(k)): x(k)=x'(k)+K(k)*(z(k)-H*x'(k))
+        transitionMatrix=other.transitionMatrix.clone();   //!< state transition matrix (A)
+        measurementMatrix=other.measurementMatrix.clone();  //!< measurement matrix (H)
+        processNoiseCov=other.processNoiseCov.clone();    //!< process noise covariance matrix (Q)
+        measurementNoiseCov=other.measurementNoiseCov.clone();//!< measurement noise covariance matrix (R)
+        errorCovPre=other.errorCovPre.clone();        //!< priori error estimate covariance matrix (P'(k)): P'(k)=A*P(k-1)*At + Q)*/
+        gain=other.gain.clone();               //!< Kalman gain matrix (K(k)): K(k)=P'(k)*Ht*inv(H*P'(k)*Ht+R)
+        errorCovPost=other.errorCovPost.clone();       //!< posteriori error estimate covariance matrix (P(k)): P(k)=(I-K(k)*H)*P'(k)
 
-            // do something with bar
-        }
-        MyKalmanFilter(int dynamParams, int measureParams, int controlParams=0, int type=CV_32F):KalmanFilter(dynamParams, measureParams, controlParams, type)
-        {
+        // do something with bar
+    }
 
-        }
+    MyKalmanFilter(int dynamParams, int measureParams, int controlParams=0, int type=CV_32F):KalmanFilter(dynamParams, measureParams, controlParams, type)
+    {}
 };
 
 //--------------------------------------------------------------
@@ -56,9 +55,7 @@ public:
     //--------------------------------------------------------------
     // MUST HAVE METHODS (INTERFACE)
     Belief( const Belief& other) : kalman_filter(other.kalman_filter),mean(other.mean),covariance(other.covariance)
-    {
-
-    }
+    {}
 
     Belief() : kalman_filter(kNumState,kNumObs,0)
     {
@@ -134,12 +131,6 @@ public:
         mean = kalman_filter.predict();
         covariance = kalman_filter.errorCovPre.rowRange(0,3).colRange(0,3);
         //std::cout << "  cov:"<< covariance << std::endl<< std::endl;
-
-
-
-
-
-        evaluate();
     }
 
 

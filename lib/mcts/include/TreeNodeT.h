@@ -24,7 +24,7 @@ namespace msa {
             TreeNodeT(Belief belief_, TreeNodeT* parent = NULL):
                 action(),
                 parent(parent),
-                agent_id(belief.agent_id()),
+                //agent_id(belief.agent_id()),
                 num_visits(0),
                 value(0),
                 depth(parent ? parent->depth + 1 : 0),
@@ -112,7 +112,7 @@ namespace msa {
             Belief belief;			// the belief of this TreeNode
             Action action;			// the action which led to the state of this TreeNode
             TreeNodeT* parent;		// parent of this TreeNode
-			int agent_id;			// agent who made the decision
+            //int agent_id;			// agent who made the decision
 
             int num_visits;			// number of times TreeNode has been visited
             float value;			// value of this TreeNode

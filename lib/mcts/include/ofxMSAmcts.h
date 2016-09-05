@@ -13,12 +13,8 @@ MCTS Code Based on the Java (Simon Lucas - University of Essex) and Python (Pete
 namespace msa {
 namespace mcts {
 
-
-
 struct timespec start, finish;
 double elapsed;
-
-
 
 // Belief must comply with Belief Interface (see IState.h)
 // Action can be anything (which your Belief class knows how to handle)
@@ -42,7 +38,6 @@ public:
         simulation_depth( simulation_depth_ ),
         uct_k( sqrt(2) )
     {}
-
 
     //--------------------------------------------------------------
     const LoopTimer & get_timer() const {
@@ -79,7 +74,7 @@ public:
         std::vector< Action > actions;
         Belief belief(node->get_belief());
         belief.get_actions(actions);
-
+        std::cout << "actions:"<< actions.size() << std::endl;
         while (!queue.empty())
         {
             std::cout << "depth:" << queue.front()->get_depth() << std::endl;
@@ -101,7 +96,7 @@ public:
 
 
     //--------------------------------------------------------------
-    Action run(const std::vector<Belief>& current_belief) {
+    Action run(const Belief & current_belief) {
         // initialize timer
         clock_gettime(CLOCK_MONOTONIC, &start);
         timer.init();
@@ -109,15 +104,13 @@ public:
         TreeNode* best_node = NULL;
 
         // For each tracker generate binary action tree
-        for(int i=0; i < current_belief.size(); ++i)
-        {
-            // initialize root TreeNode with current belief
-            TreeNode root_node(current_belief[i]);
 
-            // 1. Start at root, dig down into tree
-            //depth_first_expand(node);
-            breath_first_expand(&root_node);
-        }
+        // initialize root TreeNode with current belief
+        TreeNode root_node(current_belief);
+        // 1. Start at root, dig down into tree
+        //depth_first_expand(node);
+        breath_first_expand(&root_node);
+
 
         clock_gettime(CLOCK_MONOTONIC, &finish);
         elapsed = (finish.tv_sec - start.tv_sec);
@@ -125,7 +118,7 @@ public:
 
         std::cout << "elapsed time: "<< elapsed << std::endl;
 
-        return Action();
+        //return Action();
     }
 
 
