@@ -21,14 +21,14 @@ namespace msa {
 
         public:
             //--------------------------------------------------------------
-            TreeNodeT(const Belief& belief_, TreeNodeT* parent = NULL):
-                belief(belief_),
+            TreeNodeT(Belief belief_, TreeNodeT* parent = NULL):
                 action(),
                 parent(parent),
                 agent_id(belief.agent_id()),
                 num_visits(0),
                 value(0),
-                depth(parent ? parent->depth + 1 : 0)
+                depth(parent ? parent->depth + 1 : 0),
+                belief(belief_)
             {
                 //std::cout << "depth: "<<depth << std::endl;
             }
@@ -38,6 +38,7 @@ namespace msa {
             // expand by adding a single child
             TreeNodeT* expand()
             {
+
                 // sanity check that we're not already fully expanded
                 if(is_fully_expanded()) return NULL;
 
@@ -69,8 +70,8 @@ namespace msa {
 
 
             //--------------------------------------------------------------
-            void update(const std::vector<float>& rewards) {
-                this->value += rewards[agent_id];
+            void update(float & reward) {
+                this->value += reward;
                 num_visits++;
             }
 
@@ -87,7 +88,7 @@ namespace msa {
             bool is_fully_expanded() const { return children.empty() == false && children.size() == actions.size(); }
 
             // does this TreeNode end the search (i.e. the game)
-            bool is_terminal() const { return belief.is_terminal(); }
+            bool is_terminal() { return belief.is_terminal(); }
 
             // number of times the TreeNode has been visited
             int get_num_visits() const { return num_visits; }
@@ -108,7 +109,7 @@ namespace msa {
             TreeNodeT* get_parent() const { return parent; }
 
         private:
-            Belief belief;			// the state of this TreeNode
+            Belief belief;			// the belief of this TreeNode
             Action action;			// the action which led to the state of this TreeNode
             TreeNodeT* parent;		// parent of this TreeNode
 			int agent_id;			// agent who made the decision

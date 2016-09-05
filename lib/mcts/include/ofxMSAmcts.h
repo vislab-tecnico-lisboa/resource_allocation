@@ -60,7 +60,8 @@ public:
         {
             // 2. EXPAND by adding all actions (if not terminal or not fully expanded)
             //if(!node->is_fully_expanded() && !node->is_terminal())
-            depth_first_expand(node->expand(actions[i]));
+            if(!node->is_terminal())
+                depth_first_expand(node->expand(actions[i]));
         }
     }
 
@@ -73,6 +74,7 @@ public:
              * so that we enter the body of the loop.
              */
         queue.push(node);
+        std::cout << "depth:" << queue.front()->get_depth() << std::endl;
 
         std::vector< Action > actions;
         Belief belief(node->get_belief());
@@ -80,10 +82,12 @@ public:
 
         while (!queue.empty())
         {
+            std::cout << "depth:" << queue.front()->get_depth() << std::endl;
+
             node=queue.front();
             queue.pop();
 
-            if(node->get_depth()<simulation_depth)
+            if(node->get_depth()<simulation_depth&& !node->is_terminal())
             {
                 for(int i=0; i<actions.size();++i)
                 {
@@ -102,21 +106,17 @@ public:
         clock_gettime(CLOCK_MONOTONIC, &start);
         timer.init();
 
+        TreeNode* best_node = NULL;
+
         // For each tracker generate binary action tree
         for(int i=0; i < current_belief.size(); ++i)
         {
             // initialize root TreeNode with current belief
             TreeNode root_node(current_belief[i]);
 
-            TreeNode* best_node = NULL;
-
-
-            // Start at root, dig down into tree
-
-
-            TreeNode* node = &root_node;
+            // 1. Start at root, dig down into tree
             //depth_first_expand(node);
-            breath_first_expand(node);
+            breath_first_expand(&root_node);
         }
 
         clock_gettime(CLOCK_MONOTONIC, &finish);

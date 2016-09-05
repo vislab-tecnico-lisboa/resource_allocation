@@ -1,4 +1,3 @@
-#include "TreeNodeT.h"
 #include "PedestrianBelief.h"
 #include "ofxMSAmcts.h"
 #include "MSALoopTimer.h"
@@ -6,7 +5,6 @@ int main(int argc, char** argv)
 {
     std::vector<tracking::Belief> pedestrian_beliefs;
     pedestrian_beliefs.resize(10);
-
     unsigned int max_millis=0;
     unsigned int simulation_depth=5;
 
