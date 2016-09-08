@@ -30,7 +30,7 @@ namespace msa {
                 depth(parent ? parent->depth + 1 : 0),
                 belief(belief_)
             {
-                //std::cout << "depth: "<<depth << std::endl;
+                std::cout << " depth: "<<depth << std::endl;
             }
 
 
@@ -51,7 +51,14 @@ namespace msa {
                     belief.get_actions(actions);
 
                     // randomize the order
-                    //std::random_shuffle(actions.begin(), actions.end());
+                    std::random_shuffle(actions.begin(), actions.end());
+
+
+                    // Randomize the order based on the value
+                    //std::default_random_engine generator;
+                    //std::discrete_distribution<int> distribution( weights.begin(), weights.end()) ;
+
+
                 }
                 // add the next action in queue as a child
                 return add_child_with_action( actions[children.size()] );
@@ -130,7 +137,7 @@ namespace msa {
 
                 // set the action of the child to be the new action
                 child_node->action = new_action;
-
+                std::cout << "  action:" << child_node->action << std::endl;
                 // apply the new action to the state of the child TreeNode
                 child_node->belief.apply_action(new_action);
 

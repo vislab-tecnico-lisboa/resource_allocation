@@ -53,18 +53,30 @@ public:
 
     //--------------------------------------------------------------
     // MUST HAVE METHODS (INTERFACE)
-    MultipleBelief( const MultipleBelief& other_) : beliefs(other_.beliefs), actions(other_.actions)
+    MultipleBelief( const MultipleBelief& other_) :
+        beliefs(other_.beliefs),
+        actions(other_.actions),
+        max_attend(other_.max_attend),
+        total_area(other_.total_area),
+        max_area_ratio(other_.max_area_ratio),
+        max_area(other_.max_area)
     {
     }
 
-    MultipleBelief(const std::vector<Belief> & beliefs_, const unsigned int & max_attend_=1, const float & max_area_ratio_=1.0) :
+    MultipleBelief(const std::vector<Belief> & beliefs_, const unsigned int & max_attend_=1, const unsigned int & total_area_=10000000000, const float & max_area_ratio_=1.0) :
         beliefs(beliefs_),
         max_attend(max_attend_),
-        max_area_ratio(max_area_ratio_)
+        total_area(total_area_),
+        max_area_ratio(max_area_ratio_),
+        max_area((float)total_area*max_area_ratio)
     {
         std::cout << "max_atend:" << max_attend << std::endl;
+        std::cout << "total_area:" << total_area << std::endl;
         std::cout << "max_area_ratio:" << max_area_ratio_ << std::endl;
+        std::cout << "max_area:" << max_area << std::endl;
+
         std::cout << "trackers:"<< beliefs_.size() << std::endl;
+
         // Compute all possible actions vector
         unsigned int possible_actions=choose(beliefs.size(),max_attend_);
 
@@ -101,29 +113,59 @@ public:
     // whether or not this belief is terminal (reached end)
     bool is_terminal() {
 
+        float area=0;
+
+        for(int i=0; i<beliefs.size();++i)
+        {
+            area+=beliefs[i].compute_observation_region_area();
+            //std::cout << "area:"<< area << " max area:"<< max_area << std::endl;
+            /*if(area>max_area)
+            {
+                return true;
+            }*/
+        }
+
+        return false;
     }
 
     // apply action to belief
     void apply_action(const MultipleAction& action)  {
-        Action simple_action_;
-        simple_action_.attend=true;
-        for(int i=0; i<action.attend.size();++i)
-        {
+        Action attend_action_;
+        attend_action_.attend=true;
 
-            beliefs[action.attend[i]].apply_action(simple_action_);
+        Action dont_attend_action_;
+        dont_attend_action_.attend=false;
+        int j=0;
+        for(int i=0; i<beliefs.size();++i)
+        {
+            if(action.attend[j]==i)
+            {
+                beliefs[i].apply_action(attend_action_);
+                ++j;
+            }
+            else
+            {
+                beliefs[i].apply_action(dont_attend_action_);
+            }
+
         }
+        /*for(int i=0; i<action.attend.size();++i)
+        {
+            beliefs[action.attend[i]].apply_action(attend_action_);
+        }*/
     }
 
 
     // return possible actions from this state
     void get_actions(std::vector<MultipleAction>& actions_) const  {
         actions_=actions;
-        std::cout << "AAACTIONS SIZE:"<< actions.size() << std::endl;
     }
 
 
     // get a random action, return false if no actions found
-    bool get_random_action(Action& action) const {
+    bool get_random_action(MultipleAction& action) const {
+        int action_index=rand()%actions.size();
+        action=actions[action_index];
         return true;
     }
 
@@ -147,10 +189,11 @@ public:
     // OPTIONAL
 
     unsigned int max_attend;
-    unsigned int max_area_ratio;
+    float max_area_ratio;
+    unsigned int total_area;
     std::vector<MultipleAction> actions;
     std::vector<Belief> beliefs;
-
+    float max_area;
 
 
     void create_actions(int offset, int k)

@@ -64,6 +64,13 @@ namespace msa {
             return next_loop_end_time > start_time + std::chrono::milliseconds(max_millis);
         }
 
+        bool check(unsigned int max_millis)
+        {
+            auto next_loop_end_time = Clock::now();
+
+            return next_loop_end_time>start_time+  std::chrono::milliseconds(max_millis);
+        }
+
         //--------------------------------------------------------------
         // return average loop duration
         unsigned int avg_loop_duration_micros() const {
