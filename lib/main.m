@@ -1,7 +1,7 @@
 close all
 addpath('tracking');
 addpath('resource_constraint');
-% min size 128x52  
+% min size 128x52
 min_width=52;
 min_height=128;
 % x = [u v s u_v v_v s_v]
@@ -17,7 +17,7 @@ state_process_noise=[50 0 0; 0 50 0; 0 0 1.0];
 state_measurement_noise=[10 0 0; 0 10 0; 0 0 1.0];
 costOfNonAssignmentState=120;
 
-% optimization parameters    
+% optimization parameters
 capacity_constraint=0.3; % percentage of image to be process at each time instant
 max_items=11;            % max regions to be process (To do) IT EXPLODES RIGHT NOW!!! FIX
 time_horizon=2;          % planning time horizon (To do: now its 1 by default)
@@ -27,9 +27,10 @@ time_horizon=2;          % planning time horizon (To do: now its 1 by default)
 obj = setupSystemObjects('dataset/cvpr10_tud_stadtmitte/cvpr10_tud_stadtmitte.avi');
 v = VideoReader('dataset/cvpr10_tud_stadtmitte/cvpr10_tud_stadtmitte.avi');
 frame_size = size(read(v,1));
+
 %% Initialize pedestrian detector
 detector=initializeDetector();
- 
+
 %% Initialize trackers
 tracks = initializeTracks(); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
@@ -52,12 +53,12 @@ while ~isDone(obj.reader)
     optimization_times=[optimization_times optimization_time];
     
     probability_maps=get_probability_maps(darap);
-%     for p=size(probability_maps,2)
-%     figure(1),imagesc(probability_maps{1,p});
-%     end
-%rois=[];
-    %% detection 
-    [detection_centroids,... 
+    %     for p=size(probability_maps,2)
+    %     figure(1),imagesc(probability_maps{1,p});
+    %     end
+    %rois=[];
+    %% detection
+    [detection_centroids,...
         detection_bboxes,...
         detection_time]=...
         detectObjects(detector,...

@@ -1,4 +1,4 @@
-function tracks=predictNewLocationsOfTracks(tracks)
+function tracks=predict(tracks)
 for i = 1:length(tracks)
     bbox = tracks(i).bbox;
     

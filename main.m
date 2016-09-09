@@ -37,6 +37,8 @@ costOfNonAssignmentState=100;
 capacity_constraint=0.3; % percentage of image to be process at each time instant
 max_items=11;            % max regions to be process (To do) IT EXPLODES RIGHT NOW!!! FIX
 time_horizon=2;          % planning time horizon (To do: now its 1 by default)
+max_simulation_time_millis=1000;
+simulation_depth=3;
 
 % min size 128x52
 min_width=41;
@@ -46,7 +48,7 @@ min_height=100;
 % and displaying the results.
 obj = setupSystemObjects('data/train/MOT16-02/img1/*.jpg');
 %v = VideoReader('resource_allocation/dataset/cvpr10_tud_stadtmitte/cvpr10_tud_stadtmitte.avi');
-frame_size = size(imread([image_dir image_files(1).name]),1);
+frame_size = size(imread([image_dir image_files(1).name]));
 %% Initialize pedestrian detector
 %detector=initializeDetector();
 
@@ -55,7 +57,7 @@ tracks = initializeTracks(); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
 
 %% Initialize resource contraint policy optimizer
-%darap=initializeDARAP(frame_size(2), frame_size(1),capacity_constraint,max_items,min_width,min_height);
+optimization_=initializeMCTS(frame_size(2), frame_size(1),capacity_constraint,max_items,min_width,min_height,max_simulation_time_millis,simulation_depth);
 
 %% Detect moving objects, and track them across video frames.
 detection_times=[];
@@ -67,8 +69,8 @@ for frame_number=1:n_files
     frame = imread([image_dir image_files(frame_number).name]);
     
     %% dynamic resource allocation (POMDP - input current belief; output actions)
-    %     [rois,optimization_time]=imageProb(tracks,darap);
-    %     optimization_times=[optimization_times optimization_time];
+    [rois,optimization_time]=compute_action(tracks,optimization_);
+    optimization_times=[optimization_times optimization_time];
     %
     %     probability_maps=get_probability_maps(darap);
     
@@ -82,7 +84,7 @@ for frame_number=1:n_files
     %% tracking
     
     %predict
-    tracks=predictNewLocationsOfTracks(tracks);
+    tracks=predict(tracks);
     
     %associate
     [assignments, unassignedTracks, unassignedDetections] = ...

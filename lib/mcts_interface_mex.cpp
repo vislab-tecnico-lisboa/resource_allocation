@@ -56,30 +56,28 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     {
         // Check parameters
         //std::cout << "nrhs: " << nrhs << std::endl;
-        if(nrhs!=7)
+        if(nrhs!=9)
         {
-            mexErrMsgTxt("wrong inputs number (should be 4)");
+            mexErrMsgTxt("wrong inputs number (should be 8)");
         }
-        
+        std::cout << "OLA" << std::endl;
         double width=*(double *) mxGetPr(prhs[1]);
         double height=*(double *) mxGetPr(prhs[2]);
         double capacity_percentage=*(double *) mxGetPr(prhs[3]);
         double max_items=*(double *) mxGetPr(prhs[4]);
         double min_width=*(double *) mxGetPr(prhs[5]);
         double min_height=*(double *) mxGetPr(prhs[6]);
+        double max_simulation_time_millis=*(double *) mxGetPr(prhs[7]);
+        double simulation_depth=*(double *) mxGetPr(prhs[8]);
 
-        unsigned int max_millis=100;
-        unsigned int simulation_depth=3;
-        msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> *mcts_= new msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction>(max_millis, simulation_depth);
+        msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> *mcts_= new msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction>((unsigned int) max_simulation_time_millis, (unsigned int) simulation_depth);
 
-
-        //DARP * darp_=new  DARP((int)width,(int)height,capacity_percentage,(int)max_items,(int)min_width,(int)min_height);
-        //plhs[0] = convertPtr2Mat<DARP>(darp_);
+        plhs[0] = convertPtr2Mat< msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> >(mcts_);
         
         return;
     }
     
-// Check there is a second input, which should be the class instance handle
+// Check there is a second input, which should be the class icleranstance handle
     if (nrhs < 2)
         mexErrMsgTxt("Second input should be a class instance handle.");
     
