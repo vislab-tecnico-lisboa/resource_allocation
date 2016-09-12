@@ -2,8 +2,8 @@ function [rois,time_elapsed]=compute_action(tracks,mcts)
 rois=[];
 time_elapsed=0.0;
 
-state_means=zeros(length(tracks),3);
-state_covariances=zeros(length(tracks),3,3);
+state_means=zeros(length(tracks),6);
+state_covariances=zeros(length(tracks),6,6);
 if ~isempty(tracks)
 for i=1:length(tracks)
     state_means(i,:)=tracks(i).stateKalmanFilter.State';

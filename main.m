@@ -7,31 +7,56 @@ addpath(genpath('resource_allocation'));
 addpath(genpath('lib'));
 
 % add images dir
-image_dir = 'data/train/MOT16-02/img1/';
+image_dir = 'data/train/MOT16-09/img1/';
 
 % Load the image files. Each image, a frame
 image_files = dir([image_dir '*.jpg']);
 n_files = length(image_files);
 
 % Load the provided detections from a dataset.
-detections = csvread('data/train/MOT16-02/det/det.txt');
-%detections = csvread('data/train/MOT16-06/train/MOT16-02/gt/gt.txt');
+detections = csvread('data/train/MOT16-09/det/det.txt');
+%detections = csvread('data/train/MOT16-09/gt/gt.txt');
 
 % x = [u v s u_v v_v s_v]
 %% tracking parameters
 
 %create/destroy parameters
-invisibleForTooLong = 5;
+invisibleForTooLong = 30;
 ageThreshold = 5;
-minVisibleCount = 3;
+minVisibleCount = 1;
 
 %transition/observation parameters
-state_transition_model=[1 0 0; 0 1 0; 0 0 1]; % constant position
-state_measurement_model=[1 0 0; 0 1 0; 0 0 1];
-state_init_state_covariance=[100 0 0; 0 100 0; 0 0 2.0];
-state_process_noise=[50 0 0; 0 50 0; 0 0 1.0];
-state_measurement_noise=[10 0 0; 0 10 0; 0 0 1.0];
-costOfNonAssignmentState=100;
+state_transition_model=...
+    [1 0 0 1 0 0;...
+     0 1 0 0 1 0;...
+     0 0 1 0 0 1;...
+     0,0,0,1,0,0;...
+     0,0,0,0,1,0;...
+     0,0,0,0,0,1]; % constant position
+state_measurement_model=...
+    [1 0 0 0 0 0;...
+     0 1 0 0 0 0;...
+     0 0 1 0 0 0];
+state_init_state_covariance=[...
+    100 0 0 100 0 0;...
+    0 100 0 0 100 0;...
+    0 0 100 0 0 100;...
+    0 0 0 100 0 0;...
+    0 0 0 0 100 0;...
+    0 0 0 0 0 100];
+
+state_process_noise=[...
+    100.0 0 0 0 0 0;...
+    0 100.0 0 0 0 0;...
+    0 0 100.0 0 0 0;...
+    0 0 0 100.0 0 0;...
+    0 0 0 0 100.0 0;...
+    0 0 0 0 0 100.0];
+state_measurement_noise=[...
+    1 0 0;...
+    0 1 0;...
+    0 0 1];
+costOfNonAssignmentState=100000000;
 
 %% optimization parameters
 capacity_constraint=0.3; % percentage of image to be process at each time instant
@@ -46,7 +71,7 @@ min_height=100;
 
 %% Create System objects used for reading video, detecting moving objects,
 % and displaying the results.
-obj = setupSystemObjects('data/train/MOT16-02/img1/*.jpg');
+obj = setupSystemObjects('data/train/MOT16-09/img1/*.jpg');
 %v = VideoReader('resource_allocation/dataset/cvpr10_tud_stadtmitte/cvpr10_tud_stadtmitte.avi');
 frame_size = size(imread([image_dir image_files(1).name]));
 %% Initialize pedestrian detector
@@ -69,8 +94,8 @@ for frame_number=1:n_files
     frame = imread([image_dir image_files(frame_number).name]);
     
     %% dynamic resource allocation (POMDP - input current belief; output actions)
-    [rois,optimization_time]=compute_action(tracks,optimization_);
-    optimization_times=[optimization_times optimization_time];
+    %[rois,optimization_time]=compute_action(tracks,optimization_);
+    %optimization_times=[optimization_times optimization_time];
     %
     %     probability_maps=get_probability_maps(darap);
     
@@ -124,13 +149,13 @@ for frame_number=1:n_files
     disp(str_disp);
 end
 
-average_optimization_time=mean(optimization_times);
-average_detection_time=mean(detection_times);
-average_total_time=average_optimization_time+average_detection_time;
-average_frame_rate=1.0/average_total_time;
+%average_optimization_time=mean(optimization_times);
+%average_detection_time=mean(detection_times);
+%average_total_time=average_optimization_time+average_detection_time;
+%average_frame_rate=1.0/average_total_time;
 
 %% The results must be wriiten in the MoTChallenge res/data/[datasetname.txt] for evaluation
-csvwrite('data/res/MOT16-02.txt', results);
+csvwrite('data/res/MOT16-09.txt', results);
 
 %% The evaluation script has 3 arguments:
 %   1 - A txt that is a list of the datasets to be evaluated (file in the
