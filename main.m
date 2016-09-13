@@ -14,8 +14,8 @@ image_files = dir([image_dir '*.jpg']);
 n_files = length(image_files);
 
 % Load the provided detections from a dataset.
-detections = csvread('data/train/MOT16-09/det/det.txt');
-%detections = csvread('data/train/MOT16-09/gt/gt.txt');
+%detections = csvread('data/train/MOT16-09/det/det.txt');
+detections = csvread('data/train/MOT16-09/gt/gt.txt');
 
 % x = [u v s u_v v_v s_v]
 %% tracking parameters
@@ -24,6 +24,9 @@ detections = csvread('data/train/MOT16-09/det/det.txt');
 invisibleForTooLong = 30;
 ageThreshold = 5;
 minVisibleCount = 1;
+
+%Dummy value while
+detThr = -1000;
 
 %transition/observation parameters
 state_transition_model=...
@@ -55,7 +58,9 @@ state_process_noise=[...
 state_measurement_noise=[...
     1 0 0;...
     0 1 0;...
-    0 0 1];
+    0 0 0.001];
+
+state_measurement_noise = state_measurement_noise*1000;
 costOfNonAssignmentState=100000000;
 
 %% optimization parameters
@@ -82,7 +87,7 @@ tracks = initializeTracks(); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
 
 %% Initialize resource contraint policy optimizer
-optimization_=initializeMCTS(frame_size(2), frame_size(1),capacity_constraint,max_items,min_width,min_height,max_simulation_time_millis,simulation_depth);
+%optimization_=initializeMCTS(frame_size(2), frame_size(1),capacity_constraint,max_items,min_width,min_height,max_simulation_time_millis,simulation_depth);
 
 %% Detect moving objects, and track them across video frames.
 detection_times=[];
@@ -103,6 +108,10 @@ for frame_number=1:n_files
     
     clear detection_bboxes;
     preBB = detections(detections(:,1) == frame_number,:);
+    
+    %Filter out detections with bad score
+    preBB = preBB(preBB(:, 7) > detThr, :);
+    
     detection_bboxes=[preBB(:,3) preBB(:,4) preBB(:,5) preBB(:,6)];
     detection_centroids=[preBB(:,3)+preBB(:,5)*0.5 preBB(:,4)+preBB(:,6)*0.5];
       
@@ -155,7 +164,7 @@ end
 %average_frame_rate=1.0/average_total_time;
 
 %% The results must be wriiten in the MoTChallenge res/data/[datasetname.txt] for evaluation
-csvwrite('data/res/MOT16-09.txt', results);
+csvwrite('C:\Users\Avelino\Documents\MATLAB\resource_allocation\data\res\MOT16-09.txt', results);
 
 %% The evaluation script has 3 arguments:
 %   1 - A txt that is a list of the datasets to be evaluated (file in the
