@@ -1,6 +1,5 @@
 clear
 close all
-DefaultMask = makingDefaultMask();
 
 % add resource allocation stuff
 addpath(genpath('resource_allocation'));
@@ -10,6 +9,8 @@ addpath(genpath('lib'));
 
 % add dario's color features
 addpath(genpath('colorfeatures'));
+
+DefaultMask = makingDefaultMask();
 
 % add images dir
 image_dir = 'data/train/MOT16-09/img1/';
@@ -170,11 +171,12 @@ for frame_number=1:n_files
     tracks=predict(tracks);
     
     %associate
-    [assignments, unassignedTracks, unassignedDetections] = ...
-        detectionToTrackAssignment(tracks,...
-        detection_centroids,...
-        detection_bboxes,...
-        costOfNonAssignmentState);
+%     [assignments, unassignedTracks, unassignedDetections] = ...
+%         detectionToTrackAssignment(tracks,...
+%         detection_centroids,...
+%         detection_bboxes,...
+%         costOfNonAssignmentState);
+
     
     %update
     tracks=updateAssignedTracks(tracks,assignments,detection_centroids,detection_bboxes);
