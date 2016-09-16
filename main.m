@@ -1,10 +1,15 @@
+clear
 close all
+DefaultMask = makingDefaultMask();
 
 % add resource allocation stuff
 addpath(genpath('resource_allocation'));
 
 % add detector (Dollar) stuff
 addpath(genpath('lib'));
+
+% add dario's color features
+addpath(genpath('colorfeatures'));
 
 % add images dir
 image_dir = 'data/train/MOT16-09/img1/';
@@ -114,7 +119,51 @@ for frame_number=1:n_files
     
     detection_bboxes=[preBB(:,3) preBB(:,4) preBB(:,5) preBB(:,6)];
     detection_centroids=[preBB(:,3)+preBB(:,5)*0.5 preBB(:,4)+preBB(:,6)*0.5];
-      
+    
+   
+    %% Extract Dario's color features
+    
+    linsRect = size(detection_bboxes, 1);
+    
+    %Each line is a color histogram of each person. A BVT Histogram has 440
+    %entries.
+    clear BVTHistograms;
+    BVTHistograms = zeros(linsRect, 440);
+    
+    for i=1:linsRect
+        
+        %If the bbox is out of the image would have an error... this avoids
+        %that but might not be the best solution
+        
+        beginX = detection_bboxes(i,2);
+        endX = detection_bboxes(i,2)+detection_bboxes(i,4);
+        beginY = detection_bboxes(i,1);
+        endY = detection_bboxes(i,1)+detection_bboxes(i,3);
+        
+        
+        if endX > size(frame, 2)
+        endX = size(frame, 2);
+        end
+        
+        if beginX <1;
+        beginX = 1; 
+        end
+        if endY > size(frame, 1)
+        endY = size(frame, 1);
+        end
+        if beginY < 1;
+        beginY = 1;
+        end
+        
+        person = frame(beginY:endY,beginX:endX,:);
+        
+        [paddedImage, smallPaddedImage] = smartPadImageToBodyPartMaskSize(person);
+        
+        BVTHistograms(i,:) = extractBVT(smallPaddedImage,DefaultMask);
+        
+    end
+    
+    
     %% tracking
     
     %predict
