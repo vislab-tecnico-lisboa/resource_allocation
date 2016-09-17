@@ -66,7 +66,9 @@ state_measurement_noise=[...
     0 1 0;...
     0 0 0.001];
 
-state_measurement_noise = state_measurement_noise*1000;
+state_init_state_covariance = state_init_state_covariance*1000;
+state_process_noise = state_process_noise*10;
+state_measurement_noise = state_measurement_noise*1000000;
 costOfNonAssignmentState=100000000;
 
 %% optimization parameters
