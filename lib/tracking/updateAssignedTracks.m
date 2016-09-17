@@ -1,25 +1,38 @@
-function tracks=updateAssignedTracks(tracks,assignments,centroids,bboxes)
+function tracks=updateAssignedTracks(tracks,assignments,centroids,bboxes, bvtHists)
 numAssignedTracks = size(assignments, 1);
 for i = 1:numAssignedTracks
     trackIdx = assignments(i, 1);
     detectionIdx = assignments(i, 2);
     centroid = centroids(detectionIdx, :);
     bbox = bboxes(detectionIdx, :);
+    bvtHist = bvtHists(detectionIdx, :);
+    
+    trackPosition = 0;
+    
+    for lol=1:size(tracks, 2)
+        if tracks(lol).id == trackIdx
+            trackPosition = lol;
+        end
+    end
     
     % Correct the estimate of the object's location
     % using the new detection.
-    correct(tracks(trackIdx).stateKalmanFilter, [centroid bbox(4)/bbox(3)]);
+    correct(tracks(trackPosition).stateKalmanFilter, [centroid bbox(4)/bbox(3)]);
     
     % Replace predicted bounding box with detected
     % bounding box.
-    tracks(trackIdx).bbox = bbox;
+    tracks(trackPosition).bbox = bbox;
     
     % Update track's age.
-    tracks(trackIdx).age = tracks(trackIdx).age + 1;
+    tracks(trackPosition).age = tracks(trackPosition).age + 1;
 
     % Update visibility.
-    tracks(trackIdx).totalVisibleCount = ...
-        tracks(trackIdx).totalVisibleCount + 1;
-    tracks(trackIdx).consecutiveInvisibleCount = 0;
+    tracks(trackPosition).totalVisibleCount = ...
+        tracks(trackPosition).totalVisibleCount + 1;
+    tracks(trackPosition).consecutiveInvisibleCount = 0;
+    
+    % Update the color histogram
+    tracks(trackPosition).colorHist = tracks(trackPosition).colorHist*0.2+bvtHist*0.8;
+    
 end
 end

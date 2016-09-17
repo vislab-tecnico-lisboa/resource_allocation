@@ -1,8 +1,15 @@
 function tracks=updateUnassignedTracks(tracks,unassignedTracks)
 for i = 1:length(unassignedTracks)
     ind = unassignedTracks(i);
-    tracks(ind).age = tracks(ind).age + 1;
-    tracks(ind).consecutiveInvisibleCount = ...
-        tracks(ind).consecutiveInvisibleCount + 1;
+    
+    for lol=1:size(tracks, 2)
+        if tracks(lol).id == ind
+            trackPosition = lol;
+        end
+    end
+    
+    tracks(trackPosition).age = tracks(trackPosition).age + 1;
+    tracks(trackPosition).consecutiveInvisibleCount = ...
+        tracks(trackPosition).consecutiveInvisibleCount + 1;
 end
 end
