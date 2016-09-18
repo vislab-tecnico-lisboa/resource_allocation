@@ -73,7 +73,7 @@ costOfNonAssignmentState=100000000;
 
 %% optimization parameters
 capacity_constraint=0.3; % percentage of image to be process at each time instant
-max_items=11;            % max regions to be process (To do) IT EXPLODES RIGHT NOW!!! FIX
+max_items=2;             % max regions to be process 
 time_horizon=2;          % planning time horizon (To do: now its 1 by default)
 max_simulation_time_millis=1000;
 simulation_depth=3;
@@ -95,7 +95,15 @@ tracks = initializeTracks(); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
 
 %% Initialize resource contraint policy optimizer
-%optimization_=initializeMCTS(frame_size(2), frame_size(1),capacity_constraint,max_items,min_width,min_height,max_simulation_time_millis,simulation_depth);
+optimization_=initializeMCTS(...
+    frame_size(2),...
+    frame_size(1),...
+    capacity_constraint,...
+    max_items,...
+    min_width,...
+    min_height,...
+    max_simulation_time_millis,...
+    simulation_depth);
 
 %% Detect moving objects, and track them across video frames.
 detection_times=[];
@@ -107,7 +115,7 @@ for frame_number=1:n_files
     frame = imread([image_dir image_files(frame_number).name]);
     
     %% dynamic resource allocation (POMDP - input current belief; output actions)
-    %[rois,optimization_time]=compute_action(tracks,optimization_);
+    [rois,optimization_time]=compute_action(tracks,optimization_);
     %optimization_times=[optimization_times optimization_time];
     %
     %     probability_maps=get_probability_maps(darap);
@@ -173,14 +181,7 @@ for frame_number=1:n_files
     tracks=predict(tracks);
     
     %associate
-    
-    [ assignments, unassignedTracks, unassignedDetections ] = associateData( tracks, BVTHistograms );
-%     [assignments, unassignedTracks, unassignedDetections] = ...
-%         detectionToTrackAssignment(tracks,...
-%         detection_centroids,...
-%         detection_bboxes,...
-%         costOfNonAssignmentState);
-
+    [assignments, unassignedTracks, unassignedDetections ] = associateData( tracks, BVTHistograms );
     
     %update
     tracks=updateAssignedTracks(tracks,assignments,detection_centroids,detection_bboxes, BVTHistograms);
@@ -220,7 +221,7 @@ end
 %average_frame_rate=1.0/average_total_time;
 
 %% The results must be wriiten in the MoTChallenge res/data/[datasetname.txt] for evaluation
-csvwrite('C:\Users\Avelino\Documents\MATLAB\resource_allocation\data\res\MOT16-09.txt', results);
+csvwrite('data/res/MOT16-09.txt', results);
 
 %% The evaluation script has 3 arguments:
 %   1 - A txt that is a list of the datasets to be evaluated (file in the
