@@ -6,6 +6,7 @@ addpath(genpath('resource_allocation'));
 
 % add detector (Dollar) stuff
 addpath(genpath('lib'));
+load('lib\toolbox\detector\models\LdcfInriaDetector.mat');
 
 % add dario's color features
 addpath(genpath('colorfeatures'));
@@ -13,26 +14,26 @@ addpath(genpath('colorfeatures'));
 DefaultMask = makingDefaultMask();
 
 % add images dir
-image_dir = 'data/train/MOT16-09/img1/';
+image_dir = 'data/train/MOT16-02/img1/';
 
 % Load the image files. Each image, a frame
 image_files = dir([image_dir '*.jpg']);
 n_files = length(image_files);
 
 % Load the provided detections from a dataset.
-%detections = csvread('data/train/MOT16-09/det/det.txt');
-detections = csvread('data/train/MOT16-09/gt/gt.txt');
+%detections = csvread('data/train/MOT16-02/det/det.txt');
+%detections = csvread('data/train/MOT16-02/gt/gt.txt');
 
 % x = [u v s u_v v_v s_v]
 %% tracking parameters
 
 %create/destroy parameters
-invisibleForTooLong = 2;
+invisibleForTooLong = 5;
 ageThreshold = 5;
 minVisibleCount = 1;
 
 %Dummy value while
-detThr = -1000;
+detThr = 30;
 
 %transition/observation parameters
 state_transition_model=...
@@ -84,7 +85,7 @@ min_height=100;
 
 %% Create System objects used for reading video, detecting moving objects,
 % and displaying the results.
-obj = setupSystemObjects('data/train/MOT16-09/img1/*.jpg');
+obj = setupSystemObjects('data/train/MOT16-02/img1/*.jpg');
 %v = VideoReader('resource_allocation/dataset/cvpr10_tud_stadtmitte/cvpr10_tud_stadtmitte.avi');
 frame_size = size(imread([image_dir image_files(1).name]));
 %% Initialize pedestrian detector
@@ -123,13 +124,15 @@ for frame_number=1:n_files
     rois=[];
     
     clear detection_bboxes;
-    preBB = detections(detections(:,1) == frame_number,:);
+    %preBB = detections(detections(:,1) == frame_number,:);
+    
+    preBB = acfDetect(frame, detector);
     
     %Filter out detections with bad score
-   % preBB = preBB(preBB(:, 7) > detThr, :);
+    preBB = preBB(preBB(:, 5) > detThr, :);
     
-    detection_bboxes=[preBB(:,3) preBB(:,4) preBB(:,5) preBB(:,6)];
-    detection_centroids=[preBB(:,3)+preBB(:,5)*0.5 preBB(:,4)+preBB(:,6)*0.5];
+    detection_bboxes=[preBB(:,1) preBB(:,2) preBB(:,3) preBB(:,4)];
+    detection_centroids=[preBB(:,1)+preBB(:,3)*0.5 preBB(:,2)+preBB(:,4)*0.5];
     
     
     %% Extract Dario's color features
@@ -165,6 +168,11 @@ for frame_number=1:n_files
         if beginY < 1;
             beginY = 1;
         end
+        
+        beginY = round(beginY);
+        endY = round(endY);
+        beginX = round(beginX);
+        endX = round(endX);
         
         person = frame(beginY:endY,beginX:endX,:);
         
@@ -222,7 +230,7 @@ end
 %average_frame_rate=1.0/average_total_time;
 
 %% The results must be wriiten in the MoTChallenge res/data/[datasetname.txt] for evaluation
-csvwrite('data/res/MOT16-09.txt', results);
+csvwrite('data/res/MOT16-02.txt', results);
 
 %% The evaluation script has 3 arguments:
 %   1 - A txt that is a list of the datasets to be evaluated (file in the
