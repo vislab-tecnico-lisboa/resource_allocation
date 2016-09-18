@@ -111,20 +111,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     
     // Get the class instance pointer from the second input
     msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> *mcts_ = convertMat2Ptr<msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> >(prhs[1]);
-    
-    
-    if (!strcmp("get_probability_maps", cmd))
-    {
-        // Check parameters
-        //std::cout <<nrhs<<std::endl;
-        
-        if (nrhs !=2)
-            mexErrMsgTxt("detect: Unexpected arguments.");
-        
-        //plhs[0]=MxArray(mcts_->probability_maps);
-        return;
-    }
-    
+       
     // Call the various class methods
     if (!strcmp("get_action", cmd))
     {
@@ -133,55 +120,54 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         if (nrhs !=4)
             mexErrMsgTxt("get action: Unexpected arguments.");
         const mwSize* size=mxGetDimensions(prhs[2]);
-        //std::cout << "size:" << size[1] << " " << size[0] << std::endl;
-        cv::Mat state_means=cv::Mat(size[1],size[0],CV_32F,mxGetData(prhs[2]),0);
-        //cv::Mat state_covariances=cv::Mat(size[1],size[0],CV_64F,mxGetData(prhs[3]),0);
-        //std::cout << "state_means: " << state_means << std::endl;
+
+        cv::Mat state_means=cv::Mat(size[1],size[0],CV_64F,mxGetData(prhs[2]),0);
         
-        const mwSize *dims; 
-        mwIndex jcell;
-        const mxArray *cell;
         
+        std::vector<tracking::Belief> pedestrian_beliefs;
+
         // region size
         float alpha_c=5;
         float alpha_s=5;
+        
+        // intialization of Kalman filter
+        cv::Mat transitionMatrix = *(cv::Mat_<float>(kNumState, kNumState) << 1,0,0,1,0,0, 0,1,0,0,1,0, 0,0,1,0,0,1, 0,0,0,1,0,0, 0,0,0,0,1,0, 0,0,0,0,0,1);
+        cv::Mat measurementMatrix(kNumObs,kNumState, CV_32F);
+        setIdentity(measurementMatrix);
+        cv::Mat processNoiseCov = *(cv::Mat_<float>(kNumState, kNumState) <<1,0,0,0,0,0, 0,1,0,0,0,0, 0,0,1,0,0,0, 0,0,0,1,0,0, 0,0,0,0,1,0, 0,0,0,0,0,1);
 
+        const mwSize *dims; 
+        mwIndex jcell;
         dims = mxGetDimensions(prhs[3]);
         int total_targets_=dims[0];
+        pedestrian_beliefs.reserve(total_targets_);
+
         for (jcell=0; jcell<dims[0]; jcell++) {
+            // Get covariance
             mxArray *cellArray;
             cellArray = mxGetCell(prhs[3],jcell);
             const mwSize* size=mxGetDimensions(cellArray);
-            cv::Mat state_covariance=cv::Mat(size[1],size[0],CV_32F,cellArray,0);
+            cv::Mat state_covariance=cv::Mat(size[1],size[0],CV_64F,mxGetData(cellArray),0);
             //std::cout << state_covariance << std::endl;
-        }
-
-        std::vector<tracking::Belief> pedestrian_beliefs;
-
-        pedestrian_beliefs.reserve(total_targets_);
-        for(int i=0;i<total_targets_;++i)
-        {
-            // intialization of Kalman filter
-            cv::Mat transitionMatrix = *(cv::Mat_<float>(kNumState, kNumState) << 1,0,0,1,0,0, 0,1,0,0,1,0, 0,0,1,0,0,1, 0,0,0,1,0,0, 0,0,0,0,1,0, 0,0,0,0,0,1);
-            cv::Mat measurementMatrix(kNumObs,kNumState, CV_32F);
-            setIdentity(measurementMatrix);
-            cv::Mat processNoiseCov = *(cv::Mat_<float>(kNumState, kNumState) <<1,0,0,0,0,0, 0,1,0,0,0,0, 0,0,1,0,0,0, 0,0,0,1,0,0, 0,0,0,0,1,0, 0,0,0,0,0,1);
-
-            cv::Mat errorCovPre(kNumState,kNumState, CV_32F);
-            setIdentity(errorCovPre, cv::Scalar::all(1));
+            
+            int i=(int)jcell;
             cv::Mat state_mean=state_means(cv::Rect(0,i,6,1)).t();
+            
+            state_mean.convertTo(state_mean, CV_32F);
+            state_covariance.convertTo(state_covariance, CV_32F);
 
-            pedestrian_beliefs.push_back(tracking::Belief(alpha_c,alpha_s,i,transitionMatrix,measurementMatrix,processNoiseCov,state_mean,errorCovPre));
+            pedestrian_beliefs.push_back(tracking::Belief(alpha_c,alpha_s,i,transitionMatrix,measurementMatrix,processNoiseCov,state_mean,state_covariance));
         }
-        
-        
-        tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,max_targets,total_area,max_area_ratio);
 
-        mcts_->run(belief);
         tic();
 
+        tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,max_targets,total_area,max_area_ratio);
+        
+        tracking::MultipleAction mult_action = mcts_->run(belief);
+        
         double time_elapsed=toc_();
-        plhs[0]=MxArray(state_means);
+        std::cout << "time elapsed:" << time_elapsed << std::endl;
+        plhs[0]=MxArray(mult_action.attend);
         plhs[1]=mxCreateDoubleScalar(time_elapsed);
 
         return;

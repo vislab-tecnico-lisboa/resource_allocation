@@ -1,4 +1,6 @@
 *~
+*.user
+*.mexa64
 downloads/*
 data/test/*
 data/train/*
@@ -6,3 +8,4 @@ data/res/*
 matlab/mot/*
 matlab/toolbox/*
 matlab/__MACOSX/*
+

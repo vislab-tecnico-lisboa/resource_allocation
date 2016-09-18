@@ -91,6 +91,8 @@ public:
         //std::cout << "init:" <<  kalman_filter.measurementNoiseCov << std::endl;
     }
 
+    ~Belief()
+    {}
 
 
     // whether or not this belief is terminal (reached end)
@@ -106,7 +108,7 @@ public:
     // apply action to state
     void apply_action(const Action& action)  {
         //IT SHOULD FIRST OBSERVE AND THEN PREDICT
-        std::cout << "     id: "<< id << " action: "<< action.attend<<  std::endl;
+        //std::cout << "     id: "<< id << " action: "<< action.attend<<  std::endl;
         if(action.attend)
         {
             //Observe
@@ -151,11 +153,6 @@ public:
 
     }
 
-
-    // return state as string (for debug purposes)
-    std::string to_string() const  {
-
-    }
 
 
     //--------------------------------------------------------------

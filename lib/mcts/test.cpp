@@ -5,13 +5,13 @@
 int main(int argc, char** argv)
 {
     // Image size
-    unsigned int width=640;
-    unsigned int height=480;
+    unsigned int width=1920;
+    unsigned int height=1080;
     unsigned int total_area=width*height;
 
     //resource constraints
-    unsigned int max_targets_=3;
-    float max_area_ratio_=0.1;
+    unsigned int max_targets_=1;
+    float max_area_ratio_=0.2;
 
     // region size
     float alpha_c=5;
@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 
 
     // Initialize targets
-    unsigned int total_targets_=5;
+    unsigned int total_targets_=12;
     std::vector<tracking::Belief> pedestrian_beliefs;
 
     pedestrian_beliefs.reserve(total_targets_);
@@ -54,16 +54,22 @@ int main(int argc, char** argv)
         pedestrian_beliefs.push_back(tracking::Belief(alpha_c,alpha_s,i,transitionMatrix,measurementMatrix,processNoiseCov,state,errorCovPre));
     }
 
-    tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,max_targets_,total_area,max_area_ratio_);
     unsigned int max_millis=100;
     unsigned int simulation_depth=3;
 
 
     //msa::mcts::UCT<tracking::Belief, tracking::Action> uct(max_millis, simulation_depth);
-
     msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> uct(max_millis, simulation_depth);
 
-    uct.run(belief);
+
+    max_targets_=10;
+    while(max_targets_>=2)
+    {
+        tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,--max_targets_,total_area,max_area_ratio_);
+
+        tracking::MultipleAction mult_action=uct.run(belief);
+
+    }
 
     return 0;
 }

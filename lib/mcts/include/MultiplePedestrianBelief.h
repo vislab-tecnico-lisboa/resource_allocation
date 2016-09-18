@@ -8,8 +8,7 @@
 #define kNumState 6
 #define kNumObs 3
 #define kNumActions		2
-#define kTurnRangeMin	-30
-#define kTurnRangeMax	30
+
 using namespace msa::mcts;
 using namespace std;
 namespace tracking {
@@ -18,18 +17,25 @@ namespace tracking {
 //--------------------------------------------------------------
 class MultipleAction {
 public:
-    MultipleAction() {};
+    MultipleAction() {
+
+    }
+
     MultipleAction(const int & max_attend)
     {
+        //std::cout << " max_attend:"<<max_attend<< std::endl;
         attend.resize(max_attend);
     }
+
+
+
 
     std::vector<int> attend;
 
     friend inline std::ostream& operator<<(std::ostream& os, const MultipleAction &b)
     {
         std::cout << "[";
-        for(int i=0; i< b.attend.size()-1; ++i)
+        for(unsigned int i=0; i< b.attend.size()-1; ++i)
         {
             os << b.attend[i] << " ";
         }
@@ -51,6 +57,7 @@ public:
     friend std::ostream& operator<< (std::ostream &out,
                                      const MultipleBelief<Belief> &tree) {}
 
+    int count;
     //--------------------------------------------------------------
     // MUST HAVE METHODS (INTERFACE)
     MultipleBelief( const MultipleBelief& other_) :
@@ -60,8 +67,7 @@ public:
         total_area(other_.total_area),
         max_area_ratio(other_.max_area_ratio),
         max_area(other_.max_area)
-    {
-    }
+    {}
 
     MultipleBelief(const std::vector<Belief> & beliefs_, const unsigned int & max_attend_=1, const unsigned int & total_area_=10000000000, const float & max_area_ratio_=1.0) :
         beliefs(beliefs_),
@@ -70,32 +76,32 @@ public:
         max_area_ratio(max_area_ratio_),
         max_area((float)total_area*max_area_ratio)
     {
+        count=0;
         std::cout << "max_atend:" << max_attend << std::endl;
         std::cout << "total_area:" << total_area << std::endl;
         std::cout << "max_area_ratio:" << max_area_ratio_ << std::endl;
         std::cout << "max_area:" << max_area << std::endl;
-
         std::cout << "trackers:"<< beliefs_.size() << std::endl;
 
         // Compute all possible actions vector
         unsigned int possible_actions=choose(beliefs.size(),max_attend_);
-
-        actions.reserve(possible_actions);
+        std::cout << "possible actions: " << possible_actions << std::endl;
+        //actions.reserve(possible_actions);
         for(int i=0; i<possible_actions;++i)
         {
             actions.push_back(max_attend);
         }
+
         // Create combinations
         create_actions(0, max_attend_);
 
         /*for(int i=0; i< actions.size(); ++i)
         {
-            std::cout << "combination no " << i+1 << ": " << actions[i] << std::endl;
-        }*/
-
-        std::cout << "actions size:"<< actions.size() << std::endl;
-
+            std::cout << actions[i] ;
+        }
+        std::cout << std::endl;*/
     }
+
 
     unsigned int choose(unsigned int n, unsigned int k)
     {
@@ -149,10 +155,6 @@ public:
             }
 
         }
-        /*for(int i=0; i<action.attend.size();++i)
-        {
-            beliefs[action.attend[i]].apply_action(attend_action_);
-        }*/
     }
 
 
@@ -184,8 +186,6 @@ public:
     }
 
 
-
-
     // OPTIONAL
 
     unsigned int max_attend;
@@ -200,15 +200,12 @@ public:
     {
         if (k == 0)
         {
-            static int count = 0;
             for (int i = 0; i < combination.size(); ++i) {
                 actions[count].attend[i]=combination[i];
-
             }
             ++count;
             return;
         }
-
 
         for (int i = offset; i <= beliefs.size() - k; ++i) {
             combination.push_back(i);
