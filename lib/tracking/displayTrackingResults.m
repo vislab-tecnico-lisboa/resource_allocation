@@ -9,8 +9,7 @@ if ~isempty(tracks)
     % Noisy detections tend to result in short-lived tracks.
     % Only display tracks that have been visible for more than
     % a minimum number of frames.
-    reliableTrackInds = ...
-        [tracks(:).totalVisibleCount] > minVisibleCount;
+    reliableTrackInds = [tracks(:).totalVisibleCount] > minVisibleCount;
     reliableTracks = tracks(reliableTrackInds);
     
     % Display the objects. If an object has not been detected
@@ -19,7 +18,7 @@ if ~isempty(tracks)
         % Get bounding boxes.
         bboxes = cat(1, reliableTracks.bbox);
         
-        % Get ids.
+        % Get ids
         ids = int32([reliableTracks(:).id]);
         
         % Create labels for objects indicating the ones for

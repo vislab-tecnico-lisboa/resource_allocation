@@ -1,5 +1,5 @@
-function [rois,time_elapsed]=compute_action(tracks,mcts)
-rois=[];
+function [action,time_elapsed]=compute_action(tracks,mcts)
+action=[];
 time_elapsed=0.0;
 
 state_means=zeros(length(tracks),6);
@@ -10,7 +10,11 @@ for i=1:length(tracks)
     state_means(i,:)=tracks(i).stateKalmanFilter.State';
     state_covariances{i}=tracks(i).stateKalmanFilter.StateCovariance;
 end
-[rois,time_elapsed]=get_action(mcts,state_means',state_covariances);
+[action,time_elapsed]=get_action(mcts,state_means',state_covariances);
+
+% compute rois
+
+
 
 end
 end
