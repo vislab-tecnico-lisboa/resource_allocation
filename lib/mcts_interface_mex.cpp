@@ -30,7 +30,11 @@
 #include "mcts/include/MultiplePedestrianBelief.h"
 #include "mcts/include/TreeNodeT.h"
 #include "mcts/include/ofxMSAmcts.h"
+
 std::stack<clock_t> tictoc_stack;
+double max_targets;
+double total_area;
+double max_area_ratio;
 
 void tic() {
     tictoc_stack.push(clock());
@@ -60,7 +64,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         {
             mexErrMsgTxt("wrong inputs number (should be 8)");
         }
-        std::cout << "OLA" << std::endl;
         double width=*(double *) mxGetPr(prhs[1]);
         double height=*(double *) mxGetPr(prhs[2]);
         double capacity_percentage=*(double *) mxGetPr(prhs[3]);
@@ -70,7 +73,22 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         double max_simulation_time_millis=*(double *) mxGetPr(prhs[7]);
         double simulation_depth=*(double *) mxGetPr(prhs[8]);
 
-        msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> *mcts_= new msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction>((unsigned int) max_simulation_time_millis, (unsigned int) simulation_depth);
+        std::cout << "width:"<<width << std::endl;
+        std::cout << "height:"<<height << std::endl;
+        std::cout << "capacity_percentage:"<<capacity_percentage << std::endl;
+        std::cout << "max_items:"<<max_items << std::endl;
+        std::cout << "min_width:"<<min_width << std::endl;
+        std::cout << "min_height:"<<min_height << std::endl;
+        std::cout << "max_simulation_time_millis:"<<max_simulation_time_millis << std::endl;
+        std::cout << "simulation_depth:"<<simulation_depth << std::endl;
+        
+        total_area=width*height;
+        max_targets=max_items;
+        max_area_ratio=0.2;
+        
+        msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> *mcts_= new msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction>(
+                (unsigned int) max_simulation_time_millis, 
+                (unsigned int) simulation_depth);
 
         plhs[0] = convertPtr2Mat< msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> >(mcts_);
         
@@ -111,27 +129,60 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (!strcmp("get_action", cmd))
     {
         // Check parameters
-        
-        if (nrhs !=5)
-            mexErrMsgTxt("detect: Unexpected arguments.");
+        std::cout << nrhs << std::endl;
+        if (nrhs !=4)
+            mexErrMsgTxt("get action: Unexpected arguments.");
         const mwSize* size=mxGetDimensions(prhs[2]);
         //std::cout << "size:" << size[1] << " " << size[0] << std::endl;
-        cv::Mat state_means=cv::Mat(size[1],size[0],CV_64F,mxGetData(prhs[2]),0);
-        cv::Mat state_covariances=cv::Mat(size[1],size[0],CV_64F,mxGetData(prhs[3]),0);
-        cv::Mat left_upper_corners=cv::Mat(size[1],size[0],CV_64F,mxGetData(prhs[4]),0);
-        std::cout << "state_means: " << state_means << std::endl;
-        //std::cout << "state_covariances: " << state_covariances << std::endl;
-        //std::cout << "left_upper_corner: " << left_upper_corners << std::endl;
+        cv::Mat state_means=cv::Mat(size[1],size[0],CV_32F,mxGetData(prhs[2]),0);
+        //cv::Mat state_covariances=cv::Mat(size[1],size[0],CV_64F,mxGetData(prhs[3]),0);
+        //std::cout << "state_means: " << state_means << std::endl;
         
-        tic();
-        /*std::vector<cv::Rect> rois=mcts_->getROIS(
-                state_means,
-                state_variances);
-        double time_elapsed=toc_();
-        std::cout << "time elapsed (optimization):" << time_elapsed<< std::endl;
+        const mwSize *dims; 
+        mwIndex jcell;
+        const mxArray *cell;
+        
+        // region size
+        float alpha_c=5;
+        float alpha_s=5;
 
-        plhs[0]=MxArray(rois);
-        plhs[1]=mxCreateDoubleScalar(time_elapsed);*/
+        dims = mxGetDimensions(prhs[3]);
+        int total_targets_=dims[0];
+        for (jcell=0; jcell<dims[0]; jcell++) {
+            mxArray *cellArray;
+            cellArray = mxGetCell(prhs[3],jcell);
+            const mwSize* size=mxGetDimensions(cellArray);
+            cv::Mat state_covariance=cv::Mat(size[1],size[0],CV_32F,cellArray,0);
+            //std::cout << state_covariance << std::endl;
+        }
+
+        std::vector<tracking::Belief> pedestrian_beliefs;
+
+        pedestrian_beliefs.reserve(total_targets_);
+        for(int i=0;i<total_targets_;++i)
+        {
+            // intialization of Kalman filter
+            cv::Mat transitionMatrix = *(cv::Mat_<float>(kNumState, kNumState) << 1,0,0,1,0,0, 0,1,0,0,1,0, 0,0,1,0,0,1, 0,0,0,1,0,0, 0,0,0,0,1,0, 0,0,0,0,0,1);
+            cv::Mat measurementMatrix(kNumObs,kNumState, CV_32F);
+            setIdentity(measurementMatrix);
+            cv::Mat processNoiseCov = *(cv::Mat_<float>(kNumState, kNumState) <<1,0,0,0,0,0, 0,1,0,0,0,0, 0,0,1,0,0,0, 0,0,0,1,0,0, 0,0,0,0,1,0, 0,0,0,0,0,1);
+
+            cv::Mat errorCovPre(kNumState,kNumState, CV_32F);
+            setIdentity(errorCovPre, cv::Scalar::all(1));
+            cv::Mat state_mean=state_means(cv::Rect(0,i,6,1)).t();
+
+            pedestrian_beliefs.push_back(tracking::Belief(alpha_c,alpha_s,i,transitionMatrix,measurementMatrix,processNoiseCov,state_mean,errorCovPre));
+        }
+        
+        
+        tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,max_targets,total_area,max_area_ratio);
+
+        mcts_->run(belief);
+        tic();
+
+        double time_elapsed=toc_();
+        plhs[0]=MxArray(state_means);
+        plhs[1]=mxCreateDoubleScalar(time_elapsed);
 
         return;
     }

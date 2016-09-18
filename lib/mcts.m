@@ -14,13 +14,9 @@ classdef mcts < handle
             mcts_interface_mex('delete', this.objectHandle);
         end
 
-        %% Detect persons
-        function varargout = detect(this, varargin)
-            [varargout{1:nargout}] = pedestrian_detector_interface_mex('detect', this.objectHandle, varargin{:});
-        end
-        
-        function varargout = detect_with_rois(this, varargin)
-            [varargout{1:nargout}] = pedestrian_detector_interface_mex('detect_with_rois', this.objectHandle, varargin{:});
+        %% Get planned action
+        function varargout = get_action(this, varargin)
+            [varargout{1:nargout}] = mcts_interface_mex('get_action', this.objectHandle, varargin{:});
         end
     end
 end

@@ -87,6 +87,7 @@ public:
 
         mean=kalman_filter.statePre.rowRange(0,3);
         covariance=kalman_filter.errorCovPost.rowRange(0,3).colRange(0,3);
+
         //std::cout << "init:" <<  kalman_filter.measurementNoiseCov << std::endl;
     }
 
