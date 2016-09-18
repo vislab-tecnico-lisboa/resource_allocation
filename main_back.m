@@ -27,7 +27,7 @@ detections = csvread('data/train/MOT16-09/gt/gt.txt');
 %% tracking parameters
 
 %create/destroy parameters
-invisibleForTooLong = 2;
+invisibleForTooLong = 30;
 ageThreshold = 5;
 minVisibleCount = 1;
 
@@ -77,7 +77,8 @@ max_items=1;             % max regions to be process
 time_horizon=2;          % planning time horizon (To do: now its 1 by default)
 max_simulation_time_millis=10;
 simulation_depth=3;
-
+alpha_c=1.0;
+alpha_s=1.0;
 % min size 128x52
 min_width=41;
 min_height=100;
@@ -95,15 +96,15 @@ tracks = initializeTracks(min_height); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
 
 %% Initialize resource contraint policy optimizer
-% optimization_=initializeMCTS(...
-%     frame_size(2),...
-%     frame_size(1),...
-%     capacity_constraint,...
-%     max_items,...
-%     min_width,...
-%     min_height,...
-%     max_simulation_time_millis,...
-%     simulation_depth);
+ optimization_=initializeMCTS(...
+     frame_size(2),...
+     frame_size(1),...
+     capacity_constraint,...
+     max_items,...
+     min_width,...
+     min_height,...
+     max_simulation_time_millis,...
+     simulation_depth);
 
 %% Detect moving objects, and track them across video frames.
 detection_times=[];
@@ -114,26 +115,33 @@ for frame_number=1:n_files
     %Load image
     frame = imread([image_dir image_files(frame_number).name]);
     
-    %% dynamic resource allocation (POMDP - input current belief; output actions)
-%     [rois,optimization_time]=compute_action(tracks,optimization_);
-    %optimization_times=[optimization_times optimization_time];
-    %
-    %     probability_maps=get_probability_maps(darap);
+    %% dynamic resource allocation (POMDP - input current belief; output locations to attend)
     
-    rois=[];
+    % Get action
+    [action,optimization_time]=compute_action(tracks,optimization_);
+    optimization_times=[optimization_times optimization_time];
+    
+    % Get rois
+    rois=compute_rois(tracks,action,min_width,min_height,alpha_c,alpha_s);
+   
+    % Crop frames
+    if length(rois)>0
+        for i=1:size(rois,1)
+            I2 = imcrop(frame,rois(i,:));
+            imshow(I2)
+        end
+    end
     
     clear detection_bboxes;
     preBB = detections(detections(:,1) == frame_number,:);
     
     %Filter out detections with bad score
-   % preBB = preBB(preBB(:, 7) > detThr, :);
+    preBB = preBB(preBB(:, 7) > detThr, :);
     
     detection_bboxes=[preBB(:,3) preBB(:,4) preBB(:,5) preBB(:,6)];
     detection_centroids=[preBB(:,3)+preBB(:,5)*0.5 preBB(:,4)+preBB(:,6)*0.5];
     
-    
     %% Extract Dario's color features
-    
     linsRect = size(detection_bboxes, 1);
     
     %Each line is a color histogram of each person. A BVT Histogram has 440
@@ -146,10 +154,10 @@ for frame_number=1:n_files
         %If the bbox is out of the image would have an error... this avoids
         %that but might not be the best solution
         
-        beginX = detection_bboxes(i,1);
-        endX = detection_bboxes(i,1)+detection_bboxes(i,3);
-        beginY = detection_bboxes(i,2);
-        endY = detection_bboxes(i,2)+detection_bboxes(i,4);
+        beginX = detection_bboxes(i,2);
+        endX = detection_bboxes(i,2)+detection_bboxes(i,4);
+        beginY = detection_bboxes(i,1);
+        endY = detection_bboxes(i,1)+detection_bboxes(i,3);
         
         
         if endX > size(frame, 2)
