@@ -1,4 +1,4 @@
-function [ assignment, unassignedTracks, unassignedDetections ] = associateData( trackers, bvtHists )
+function [ assignment, unassignedTracks, unassignedDetections ] = associateData( trackers, bvtHists, detection_centroids)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -29,10 +29,21 @@ costMat = zeros(nTracks, nDetections);
 for i=1:nTracks
    for j=1:nDetections
        custo = bhattacharyya(trackers(i).colorHist, bvtHists(j, :));
+       dist = norm(detection_centroids(j,:)-trackers(i).stateKalmanFilter.State(1:2)');
+       
        if custo > 0.6
        costMat(i, j) = 1000;
        else
        costMat(i, j) = custo; 
+       end
+       
+       % Warning this a DUMB validation gate. Replace by a decent one and
+       % discard the associations with a score of 1000 in the end.
+       sc = trackers(i).stateKalmanFilter.State(3);
+       width = 40*sc;
+       
+       if dist > width/2
+          costMat(i, j) = 1000; 
        end
    end
 end

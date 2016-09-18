@@ -181,7 +181,7 @@ for frame_number=1:n_files
     tracks=predict(tracks);
     
     %associate
-    [assignments, unassignedTracks, unassignedDetections ] = associateData( tracks, BVTHistograms );
+    [assignments, unassignedTracks, unassignedDetections ] = associateData( tracks, BVTHistograms, detection_centroids );
     
     %update
     tracks=updateAssignedTracks(tracks,assignments,detection_centroids,detection_bboxes, BVTHistograms);
