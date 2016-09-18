@@ -28,7 +28,12 @@ costMat = zeros(nTracks, nDetections);
 
 for i=1:nTracks
    for j=1:nDetections
-       costMat(i, j) = bhattacharyya(trackers(i).colorHist, bvtHists(j, :));
+       custo = bhattacharyya(trackers(i).colorHist, bvtHists(j, :));
+       if custo > 0.6
+       costMat(i, j) = 1000;
+       else
+       costMat(i, j) = custo; 
+       end
    end
 end
 

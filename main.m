@@ -126,7 +126,7 @@ for frame_number=1:n_files
     preBB = detections(detections(:,1) == frame_number,:);
     
     %Filter out detections with bad score
-    preBB = preBB(preBB(:, 7) > detThr, :);
+   % preBB = preBB(preBB(:, 7) > detThr, :);
     
     detection_bboxes=[preBB(:,3) preBB(:,4) preBB(:,5) preBB(:,6)];
     detection_centroids=[preBB(:,3)+preBB(:,5)*0.5 preBB(:,4)+preBB(:,6)*0.5];
@@ -146,10 +146,10 @@ for frame_number=1:n_files
         %If the bbox is out of the image would have an error... this avoids
         %that but might not be the best solution
         
-        beginX = detection_bboxes(i,2);
-        endX = detection_bboxes(i,2)+detection_bboxes(i,4);
-        beginY = detection_bboxes(i,1);
-        endY = detection_bboxes(i,1)+detection_bboxes(i,3);
+        beginX = detection_bboxes(i,1);
+        endX = detection_bboxes(i,1)+detection_bboxes(i,3);
+        beginY = detection_bboxes(i,2);
+        endY = detection_bboxes(i,2)+detection_bboxes(i,4);
         
         
         if endX > size(frame, 2)

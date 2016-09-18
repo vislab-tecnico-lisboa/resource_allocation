@@ -43,7 +43,7 @@ for i = 1:numAssignedTracks
     tracks(trackPosition).consecutiveInvisibleCount = 0;
     
     % Update the color histogram
-    tracks(trackPosition).colorHist = tracks(trackPosition).colorHist*0.2+bvtHist*0.8;
+    tracks(trackPosition).colorHist = tracks(trackPosition).colorHist*0.1+bvtHist*0.9;
     
 end
 end
