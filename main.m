@@ -37,15 +37,15 @@ detThr = -1000;
 %transition/observation parameters
 state_transition_model=...
     [1 0 0 1 0 0;...
-     0 1 0 0 1 0;...
-     0 0 1 0 0 1;...
-     0,0,0,1,0,0;...
-     0,0,0,0,1,0;...
-     0,0,0,0,0,1]; % constant position
+    0 1 0 0 1 0;...
+    0 0 1 0 0 1;...
+    0,0,0,1,0,0;...
+    0,0,0,0,1,0;...
+    0,0,0,0,0,1]; % constant position
 state_measurement_model=...
     [1 0 0 0 0 0;...
-     0 1 0 0 0 0;...
-     0 0 1 0 0 0];
+    0 1 0 0 0 0;...
+    0 0 1 0 0 0];
 state_init_state_covariance=[...
     100 0 0 100 0 0;...
     0 100 0 0 100 0;...
@@ -73,9 +73,9 @@ costOfNonAssignmentState=100000000;
 
 %% optimization parameters
 capacity_constraint=0.3; % percentage of image to be process at each time instant
-max_items=2;             % max regions to be process 
+max_items=1;             % max regions to be process
 time_horizon=2;          % planning time horizon (To do: now its 1 by default)
-max_simulation_time_millis=1000;
+max_simulation_time_millis=10;
 simulation_depth=3;
 
 % min size 128x52
@@ -131,7 +131,7 @@ for frame_number=1:n_files
     detection_bboxes=[preBB(:,3) preBB(:,4) preBB(:,5) preBB(:,6)];
     detection_centroids=[preBB(:,3)+preBB(:,5)*0.5 preBB(:,4)+preBB(:,6)*0.5];
     
-   
+    
     %% Extract Dario's color features
     
     linsRect = size(detection_bboxes, 1);
@@ -153,17 +153,17 @@ for frame_number=1:n_files
         
         
         if endX > size(frame, 2)
-        endX = size(frame, 2);
+            endX = size(frame, 2);
         end
         
         if beginX <1;
-        beginX = 1; 
+            beginX = 1;
         end
         if endY > size(frame, 1)
-        endY = size(frame, 1);
+            endY = size(frame, 1);
         end
         if beginY < 1;
-        beginY = 1;
+            beginY = 1;
         end
         
         person = frame(beginY:endY,beginX:endX,:);
