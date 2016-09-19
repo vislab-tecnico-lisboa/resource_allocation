@@ -6,7 +6,7 @@ addpath(genpath('resource_allocation'));
 
 % add detector (Dollar) stuff
 addpath(genpath('lib'));
-load('lib\toolbox\detector\models\LdcfInriaDetector.mat');
+load('lib/toolbox/detector/models/LdcfInriaDetector.mat');
 
 % add dario's color features
 addpath(genpath('colorfeatures'));
@@ -15,6 +15,9 @@ DefaultMask = makingDefaultMask();
 
 % add images dir
 image_dir = 'data/train/MOT16-02/img1/';
+
+% Create System objects used for reading video, detecting moving objects, and displaying the results.
+obj = setupSystemObjects('data/train/MOT16-02/img1/*.jpg');
 
 % Load the image files. Each image, a frame
 image_files = dir([image_dir '*.jpg']);
@@ -70,41 +73,40 @@ state_measurement_noise=[...
 state_init_state_covariance = state_init_state_covariance*10000;
 state_process_noise = state_process_noise*10;
 state_measurement_noise = state_measurement_noise*1000;
-costOfNonAssignmentState=100000000;
 
 %% optimization parameters
 capacity_constraint=0.3; % percentage of image to be process at each time instant
-max_items=1;             % max regions to be process
+max_items=4;             % max regions to be process
 time_horizon=2;          % planning time horizon (To do: now its 1 by default)
 max_simulation_time_millis=10;
 simulation_depth=3;
-
+alpha_c=0.1;
+alpha_s=0.1;
+overlap_ratio=0.1;
 % min size 128x52
-min_width=41;
-min_height=100;
+min_width=96;
+min_height=128;
 
-%% Create System objects used for reading video, detecting moving objects,
-% and displaying the results.
-obj = setupSystemObjects('data/train/MOT16-02/img1/*.jpg');
+
 %v = VideoReader('resource_allocation/dataset/cvpr10_tud_stadtmitte/cvpr10_tud_stadtmitte.avi');
 frame_size = size(imread([image_dir image_files(1).name]));
 %% Initialize pedestrian detector
 %detector=initializeDetector();
-
+min_scale=2.0;
 %% Initialize trackers
 tracks = initializeTracks(min_height); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
 
 %% Initialize resource contraint policy optimizer
-% optimization_=initializeMCTS(...
-%     frame_size(2),...
-%     frame_size(1),...
-%     capacity_constraint,...
-%     max_items,...
-%     min_width,...
-%     min_height,...
-%     max_simulation_time_millis,...
-%     simulation_depth);
+optimization_=initializeMCTS(...
+    frame_size(2),...
+    frame_size(1),...
+    capacity_constraint,...
+    max_items,...
+    min_width,...
+    min_height,...
+    max_simulation_time_millis,...
+    simulation_depth);
 
 %% Detect moving objects, and track them across video frames.
 detection_times=[];
@@ -116,27 +118,104 @@ for frame_number=1:n_files
     frame = imread([image_dir image_files(frame_number).name]);
     
     %% dynamic resource allocation (POMDP - input current belief; output actions)
-%     [rois,optimization_time]=compute_action(tracks,optimization_);
-    %optimization_times=[optimization_times optimization_time];
-    %
-    %     probability_maps=get_probability_maps(darap);
+    if max_items<size(tracks,2)
+        optimization_=initializeMCTS(...
+            frame_size(2),...
+            frame_size(1),...
+            capacity_constraint,...
+            max_items,...
+            min_width,...
+            min_height,...
+            max_simulation_time_millis,...
+            simulation_depth);
+    else
+        optimization_=initializeMCTS(...
+            frame_size(2),...
+            frame_size(1),...
+            capacity_constraint,...
+            size(tracks,2),...
+            min_width,...
+            min_height,...
+            max_simulation_time_millis,...
+            simulation_depth);
+    end
     
-    rois=[];
     
+    [action,optimization_time]=compute_action(tracks,optimization_);
+    optimization_times=[optimization_times optimization_time];
+    rois=compute_rois(tracks,action,min_width,min_height,alpha_c,alpha_s);
+    %rois=[];
     clear detection_bboxes;
-    %preBB = detections(detections(:,1) == frame_number,:);
+    BB=[];
     
-    preBB = acfDetect(frame, detector);
+    tic
+    %merge overlapping rois
+    if size(rois)>0
+        i=1;
+        while i<size(rois,1)
+            % discard too small bbs
+            real_height=min(rois(i,2)+rois(i,4),frame_size(1))- max(rois(i,2),0) ;
+            real_width=min(rois(i,1)+rois(i,3),frame_size(2)) - max(rois(i,1),0);
+                   
+            if real_height*real_width<min_height*min_width || real_height<min_height || real_width<min_width
+                %rois(i,3)=min_width;
+                %rois(i,4)=min_height;
+                rois(i,:)=[];
+                continue;
+            end
+            j=i+1;
+            while j<size(rois,1)
+               
+                if bboxOverlapRatio(rois(i,:),rois(j,:)) >overlap_ratio
+                    upper_x=min(rois(i,1),rois(j,1));
+                    upper_y=min(rois(i,2),rois(j,2));
+                    down_x=max(rois(i,1)+rois(i,3),rois(j,1)+rois(j,3));
+                    down_y=max(rois(i,2)+rois(i,4),rois(j,2)+rois(j,4));
+                    new_width=down_x-upper_x;
+                    new_height=down_y-upper_y;
+                    rois(i,:)=[upper_x upper_y new_width new_height];
+                    rois(j,:)=[];
+                    continue;
+                end
+                j=j+1;
+            end
+            i=i+1;
+        end
+        
+        for i=1:size(rois,1)
+            image_bounding_box=imcrop(frame,rois(i,:));
+            
+            preBB = acfDetect(image_bounding_box, detector);
+            
+            %Filter out detections with bad score
+            BB = [BB; preBB(preBB(:, 5) > detThr, :)];
+            if rois(i,1)<0
+                BB(:,1) = BB(:,1);
+            else
+                BB(:,1) = BB(:,1) + rois(i,1);
+            end
+            
+            if rois(i,2)<0
+                BB(:,2) = BB(:,2);
+            else
+                BB(:,2) = BB(:,2) + rois(i,2);
+            end
+        end
+    else
+        %preBB = detections(detections(:,1) == frame_number,:);
+        
+        preBB = acfDetect(frame, detector);
+        
+        %Filter out detections with bad score
+        BB = preBB(preBB(:, 5) > detThr, :);
+    end
+    detection_bboxes=[BB(:,1) BB(:,2) BB(:,3) BB(:,4)];
+    detection_centroids=[BB(:,1)+BB(:,3)*0.5 BB(:,2)+BB(:,4)*0.5];
     
-    %Filter out detections with bad score
-    preBB = preBB(preBB(:, 5) > detThr, :);
-    
-    detection_bboxes=[preBB(:,1) preBB(:,2) preBB(:,3) preBB(:,4)];
-    detection_centroids=[preBB(:,1)+preBB(:,3)*0.5 preBB(:,2)+preBB(:,4)*0.5];
-    
+    detection_times=[detection_times toc];
     
     %% Extract Dario's color features
-    
+    tic
     linsRect = size(detection_bboxes, 1);
     
     %Each line is a color histogram of each person. A BVT Histogram has 440
@@ -210,6 +289,8 @@ for frame_number=1:n_files
         state_process_noise,...
         state_measurement_noise);
     
+    tracking_times=[tracking_times toc];
+    
     %% display results
     displayTrackingResults(obj,frame,tracks,detection_bboxes,minVisibleCount,rois);
     
@@ -224,10 +305,10 @@ for frame_number=1:n_files
     disp(str_disp);
 end
 
-%average_optimization_time=mean(optimization_times);
-%average_detection_time=mean(detection_times);
-%average_total_time=average_optimization_time+average_detection_time;
-%average_frame_rate=1.0/average_total_time;
+average_optimization_time=mean(optimization_times);
+average_detection_time=mean(detection_times);
+average_total_time=average_optimization_time+average_detection_time;
+average_frame_rate=1.0/average_total_time;
 
 %% The results must be wriiten in the MoTChallenge res/data/[datasetname.txt] for evaluation
 csvwrite('data/res/MOT16-02.txt', results);
