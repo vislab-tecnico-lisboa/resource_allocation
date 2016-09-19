@@ -7,6 +7,8 @@ function get_datasets
 	echo "Downloading datasets"
 	wget https://motchallenge.net/data/MOT16.zip
 	unzip MOT16.zip -d ../data
+	wget https://motchallenge.net/data/3DMOT2015.zip
+	unzip 3DMOT2015.zip -d ../data
     	echo "Done"
 }
 
