@@ -97,16 +97,16 @@ min_scale=2.0;
 tracks = initializeTracks(min_height); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
 
-% %% Initialize resource contraint policy optimizer
-% optimization_=initializeMCTS(...
-%     frame_size(2),...
-%     frame_size(1),...
-%     capacity_constraint,...
-%     max_items,...
-%     min_width,...
-%     min_height,...
-%     max_simulation_time_millis,...
-%     simulation_depth);
+%% Initialize resource contraint policy optimizer
+optimization_=initializeMCTS(...
+    frame_size(2),...
+    frame_size(1),...
+    capacity_constraint,...
+    max_items,...
+    min_width,...
+    min_height,...
+    max_simulation_time_millis,...
+    simulation_depth);
 
 %% Detect moving objects, and track them across video frames.
 detection_times=[];
@@ -118,97 +118,97 @@ for frame_number=1:n_files
     frame = imread([image_dir image_files(frame_number).name]);
     
     %% dynamic resource allocation (POMDP - input current belief; output actions)
-%     if max_items<size(tracks,2)
-%         optimization_=initializeMCTS(...
-%             frame_size(2),...
-%             frame_size(1),...
-%             capacity_constraint,...
-%             max_items,...
-%             min_width,...
-%             min_height,...
-%             max_simulation_time_millis,...
-%             simulation_depth);
-%     else
-%         optimization_=initializeMCTS(...
-%             frame_size(2),...
-%             frame_size(1),...
-%             capacity_constraint,...
-%             size(tracks,2),...
-%             min_width,...
-%             min_height,...
-%             max_simulation_time_millis,...
-%             simulation_depth);
-%     end
-%     
-%     
-%     [action,optimization_time]=compute_action(tracks,optimization_);
-%     optimization_times=[optimization_times optimization_time];
-%     rois=compute_rois(tracks,action,min_width,min_height,alpha_c,alpha_s);
+    if max_items<size(tracks,2)
+        optimization_=initializeMCTS(...
+            frame_size(2),...
+            frame_size(1),...
+            capacity_constraint,...
+            max_items,...
+            min_width,...
+            min_height,...
+            max_simulation_time_millis,...
+            simulation_depth);
+    else
+        optimization_=initializeMCTS(...
+            frame_size(2),...
+            frame_size(1),...
+            capacity_constraint,...
+            size(tracks,2),...
+            min_width,...
+            min_height,...
+            max_simulation_time_millis,...
+            simulation_depth);
+    end
+    
+    
+    [action,optimization_time]=compute_action(tracks,optimization_);
+    optimization_times=[optimization_times optimization_time];
+    rois=compute_rois(tracks,action,min_width,min_height,alpha_c,alpha_s);
     %rois=[];
     clear detection_bboxes;
     BB=[];
     
     tic
     %merge overlapping rois
-%     if size(rois)>0
-%         i=1;
-%         while i<size(rois,1)
-%             % discard too small bbs
-%             real_height=min(rois(i,2)+rois(i,4),frame_size(1))- max(rois(i,2),0) ;
-%             real_width=min(rois(i,1)+rois(i,3),frame_size(2)) - max(rois(i,1),0);
-%                    
-%             if real_height*real_width<min_height*min_width || real_height<min_height || real_width<min_width
-%                 %rois(i,3)=min_width;
-%                 %rois(i,4)=min_height;
-%                 rois(i,:)=[];
-%                 continue;
-%             end
-%             j=i+1;
-%             while j<size(rois,1)
-%                
-%                 if bboxOverlapRatio(rois(i,:),rois(j,:)) >overlap_ratio
-%                     upper_x=min(rois(i,1),rois(j,1));
-%                     upper_y=min(rois(i,2),rois(j,2));
-%                     down_x=max(rois(i,1)+rois(i,3),rois(j,1)+rois(j,3));
-%                     down_y=max(rois(i,2)+rois(i,4),rois(j,2)+rois(j,4));
-%                     new_width=down_x-upper_x;
-%                     new_height=down_y-upper_y;
-%                     rois(i,:)=[upper_x upper_y new_width new_height];
-%                     rois(j,:)=[];
-%                     continue;
-%                 end
-%                 j=j+1;
-%             end
-%             i=i+1;
-%         end
-%         
-%         for i=1:size(rois,1)
-%             image_bounding_box=imcrop(frame,rois(i,:));
-%             
-%             preBB = acfDetect(image_bounding_box, detector);
-%             
-%             %Filter out detections with bad score
-%             BB = [BB; preBB(preBB(:, 5) > detThr, :)];
-%             if rois(i,1)<0
-%                 BB(:,1) = BB(:,1);
-%             else
-%                 BB(:,1) = BB(:,1) + rois(i,1);
-%             end
-%             
-%             if rois(i,2)<0
-%                 BB(:,2) = BB(:,2);
-%             else
-%                 BB(:,2) = BB(:,2) + rois(i,2);
-%             end
-%         end
-%     else
+    if size(rois)>0
+        i=1;
+        while i<size(rois,1)
+            % discard too small bbs
+            real_height=min(rois(i,2)+rois(i,4),frame_size(1))- max(rois(i,2),0) ;
+            real_width=min(rois(i,1)+rois(i,3),frame_size(2)) - max(rois(i,1),0);
+                   
+            if real_height*real_width<min_height*min_width || real_height<min_height || real_width<min_width
+                %rois(i,3)=min_width;
+                %rois(i,4)=min_height;
+                rois(i,:)=[];
+                continue;
+            end
+            j=i+1;
+            while j<size(rois,1)
+               
+                if bboxOverlapRatio(rois(i,:),rois(j,:)) >overlap_ratio
+                    upper_x=min(rois(i,1),rois(j,1));
+                    upper_y=min(rois(i,2),rois(j,2));
+                    down_x=max(rois(i,1)+rois(i,3),rois(j,1)+rois(j,3));
+                    down_y=max(rois(i,2)+rois(i,4),rois(j,2)+rois(j,4));
+                    new_width=down_x-upper_x;
+                    new_height=down_y-upper_y;
+                    rois(i,:)=[upper_x upper_y new_width new_height];
+                    rois(j,:)=[];
+                    continue;
+                end
+                j=j+1;
+            end
+            i=i+1;
+        end
+        
+        for i=1:size(rois,1)
+            image_bounding_box=imcrop(frame,rois(i,:));
+            
+            preBB = acfDetect(image_bounding_box, detector);
+            
+            %Filter out detections with bad score
+            BB = [BB; preBB(preBB(:, 5) > detThr, :)];
+            if rois(i,1)<0
+                BB(:,1) = BB(:,1);
+            else
+                BB(:,1) = BB(:,1) + rois(i,1);
+            end
+            
+            if rois(i,2)<0
+                BB(:,2) = BB(:,2);
+            else
+                BB(:,2) = BB(:,2) + rois(i,2);
+            end
+        end
+    else
         %preBB = detections(detections(:,1) == frame_number,:);
         
         preBB = acfDetect(frame, detector);
         
         %Filter out detections with bad score
         BB = preBB(preBB(:, 5) > detThr, :);
-%     end
+    end
     detection_bboxes=[BB(:,1) BB(:,2) BB(:,3) BB(:,4)];
     detection_centroids=[BB(:,1)+BB(:,3)*0.5 BB(:,2)+BB(:,4)*0.5];
     
