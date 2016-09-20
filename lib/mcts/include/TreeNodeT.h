@@ -18,6 +18,8 @@ Only contains information / methods related to State, Action, Parent, Children e
 namespace msa {
 namespace mcts {
 
+
+
 template <class Belief, typename Action>
 class TreeNodeT : public boost::enable_shared_from_this< TreeNodeT<Belief, Action> >
 {
@@ -32,7 +34,7 @@ public:
         depth(parent ? parent->depth + 1 : 0),
         belief(belief_)
     {
-        std::cout << " depth: "<<depth << std::endl;
+        //std::cout << " depth: "<<depth << std::endl;
     }
 
     ~TreeNodeT()
@@ -42,6 +44,16 @@ public:
             delete children[i];
         }
 
+    }
+
+    struct actionValue {
+        Action action;
+        float value;
+    };
+
+    static bool compareByValue(const actionValue & lhs, const actionValue & rhs)
+    {
+        return lhs.value > rhs.value;
     }
 
 
@@ -61,9 +73,32 @@ public:
             // retrieve list of actions from the state
             belief.get_actions(actions);
 
-            // randomize the order
-            std::random_shuffle(actions.begin(), actions.end());
 
+            std::vector<actionValue> action_values;
+            // For each action
+            for(int i=0;i<actions.size();++i)
+            {
+                actionValue action_value;
+                action_value.action=actions[i];
+                action_value.value=0;
+                // For each object
+                for(int a=0;a<actions[i].attend.size();++a)
+                {
+                    action_value.value+=belief.beliefs[actions[i].attend[a]].evaluate();
+                }
+                action_values.push_back(action_value);
+               //action_values.values.push_back(total_reward);
+            }
+
+            std::sort(action_values.begin(), action_values.end(),compareByValue);
+
+            // randomize the order
+            //std::random_shuffle(actions.begin(), actions.end());
+
+            for (int i=0;i<actions.size();++i)
+                actions[i]=action_values[i].action;
+
+            //std::cout << actions << std::endl;
             // Randomize the order based on the value
             //std::default_random_engine generator;
             //std::discrete_distribution<int> distribution( weights.begin(), weights.end()) ;
@@ -94,7 +129,7 @@ public:
     const Belief& get_belief() const { return belief; }
 
     // the action that led to this belief
-    const Action& get_action() const { std::cout << "THE ACTION:" << action << std::endl;return action; }
+    const Action& get_action() const { return action; }
 
     // all children have been expanded and simulated
     bool is_fully_expanded() const { return children.empty() == false && children.size() == actions.size(); }
@@ -132,6 +167,8 @@ private:
 
     std::vector< Ptr > children;	// all current children
     std::vector< Action > actions;  // possible actions from this state
+
+
 
     //--------------------------------------------------------------
     // create a clone of the current state, apply action, and add as child

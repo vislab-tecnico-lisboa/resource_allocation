@@ -1,4 +1,4 @@
-function displayTrackingResults(obj,frame,tracks, detection_bboxes, minVisibleCount,rois)
+function displayTrackingResults(obj,frame,tracks, detection_bboxes,rois)
 % Convert the frame and the mask to uint8 RGB.
 frame = im2uint8(frame);
 detector_frame=frame;
@@ -9,9 +9,10 @@ if ~isempty(tracks)
     % Noisy detections tend to result in short-lived tracks.
     % Only display tracks that have been visible for more than
     % a minimum number of frames.
-    reliableTrackInds = [tracks(:).totalVisibleCount] > minVisibleCount;
-    reliableTracks = tracks(reliableTrackInds);
-    
+    %reliableTrackInds = [tracks(:).totalVisibleCount] > minVisibleCount;
+    %reliableTracks = tracks(reliableTrackInds);
+    reliableTracks = tracks;
+
     % Display the objects. If an object has not been detected
     % in this frame, display its predicted bounding box.
     if ~isempty(reliableTracks)

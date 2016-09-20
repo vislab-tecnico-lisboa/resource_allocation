@@ -195,14 +195,14 @@ public:
                 assert(node);	// sanity check
             }
 
-            std::cout << "Expand"<< std::endl;
+            //std::cout << "Expand"<< std::endl;
             // 2. EXPAND by adding a single child (if not terminal or not fully expanded)
             if(!node->is_fully_expanded() && !node->is_terminal()) node = node->expand();
 
             // 3. SIMULATE (if not terminal)
             // Copy the belief
             Belief belief(node->get_belief());
-            std::cout << "Simulate"<< std::endl;
+            //std::cout << "Simulate"<< std::endl;
 
             if(!node->is_terminal())
             {
@@ -213,7 +213,7 @@ public:
 
                     if(belief.get_random_action(action))
                     {
-                        std::cout << "  simulation action:"<< action <<std::endl;
+                        //std::cout << "  simulation action:"<< action <<std::endl;
                         belief.apply_action(action);
                     }
                     else

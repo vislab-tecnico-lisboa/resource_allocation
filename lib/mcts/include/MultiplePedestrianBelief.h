@@ -74,18 +74,19 @@ public:
         max_attend(max_attend_),
         total_area(total_area_),
         max_area_ratio(max_area_ratio_),
-        max_area((float)total_area*max_area_ratio)
+        max_area((float)total_area*max_area_ratio),
+        count(0)
     {
-        count=0;
-        std::cout << "max_atend:" << max_attend << std::endl;
+
+        /*std::cout << "max_atend:" << max_attend << std::endl;
         std::cout << "total_area:" << total_area << std::endl;
         std::cout << "max_area_ratio:" << max_area_ratio_ << std::endl;
         std::cout << "max_area:" << max_area << std::endl;
-        std::cout << "trackers:"<< beliefs_.size() << std::endl;
+        std::cout << "trackers:"<< beliefs_.size() << std::endl;*/
 
         // Compute all possible actions vector
         unsigned int possible_actions=choose(beliefs.size(),max_attend_);
-        std::cout << "possible actions: " << possible_actions << std::endl;
+        //std::cout << "possible actions: " << possible_actions << std::endl;
         //actions.reserve(possible_actions);
         for(int i=0; i<possible_actions;++i)
         {
@@ -124,13 +125,14 @@ public:
         for(int i=0; i<beliefs.size();++i)
         {
             area+=beliefs[i].compute_observation_region_area();
-            //std::cout << "area:"<< area << " max area:"<< max_area << std::endl;
-            /*if(area>max_area)
+            if(area>max_area)
             {
-                return true;
-            }*/
-        }
+                //std::cout << "area:"<< area << " max area:"<< max_area << std::endl;
 
+                return true;
+            }
+        }
+        //std::cout << "milagre"<< std::endl;
         return false;
     }
 

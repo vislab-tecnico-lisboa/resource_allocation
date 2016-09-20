@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 
 
     max_targets_=10;
-    while(max_targets_>=2)
+    //while(max_targets_>=2)
     {
         tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,max_targets_,total_area,max_area_ratio_);
 

@@ -73,19 +73,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         double max_simulation_time_millis=*(double *) mxGetPr(prhs[7]);
         double simulation_depth=*(double *) mxGetPr(prhs[8]);
 
-        std::cout << "width:"<<width << std::endl;
+        /*std::cout << "width:"<<width << std::endl;
         std::cout << "height:"<<height << std::endl;
         std::cout << "capacity_percentage:"<<capacity_percentage << std::endl;
         std::cout << "max_items:"<<max_items << std::endl;
         std::cout << "min_width:"<<min_width << std::endl;
         std::cout << "min_height:"<<min_height << std::endl;
         std::cout << "max_simulation_time_millis:"<<max_simulation_time_millis << std::endl;
-        std::cout << "simulation_depth:"<<simulation_depth << std::endl;
+        std::cout << "simulation_depth:"<<simulation_depth << std::endl;*/
         
         total_area=width*height;
         max_targets=max_items;
-        max_area_ratio=0.2;
-        
+        max_area_ratio=capacity_percentage;
+        std::cout <<"capacity_percentage:" << capacity_percentage << std::endl;
         msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> *mcts_= new msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction>(
                 (unsigned int) max_simulation_time_millis, 
                 (unsigned int) simulation_depth);
@@ -166,7 +166,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         tracking::MultipleAction mult_action = mcts_->run(belief);
         
         double time_elapsed=toc_();
-        std::cout << "time elapsed:" << time_elapsed << std::endl;
+        //std::cout << "time elapsed:" << time_elapsed << std::endl;
         plhs[0]=MxArray(mult_action.attend);
         plhs[1]=mxCreateDoubleScalar(time_elapsed);
 
