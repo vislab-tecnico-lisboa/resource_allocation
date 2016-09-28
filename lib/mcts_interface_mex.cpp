@@ -176,6 +176,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         plhs[2]=MxArray(*explored_actions);
         plhs[3]=MxArray(*explored_nodes);
 
+        for (int i=0; i< explored_nodes->size();++i)
+        {
+            std::cout << "" << (*explored_nodes)[i];
+        }
+        std::cout  << std::endl;
         delete explored_actions;
         delete explored_nodes;
         return;

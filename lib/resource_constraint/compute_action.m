@@ -12,7 +12,7 @@ for i=1:length(tracks)
     state_covariances{i}=tracks(i).stateKalmanFilter.StateCovariance;
 end
 [action,time_elapsed,explored_actions,explored_nodes]=get_action(mcts,state_means',state_covariances);
-
+explored_nodes=double(explored_nodes);
 % compute rois
 
 

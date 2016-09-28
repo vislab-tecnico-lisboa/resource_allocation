@@ -61,7 +61,7 @@ public:
 
     //--------------------------------------------------------------
     // expand by adding a single child
-    TreeNodeT* expand(int node_id_=0)
+    TreeNodeT* expand(const int & node_id_=0)
     {
         // sanity check that we're not already fully expanded
         if(is_fully_expanded()) return NULL;
@@ -78,6 +78,7 @@ public:
             std::vector<actionValue> action_values;
 
             // Prioritize actions that are associated to higher entropy regions
+
             // For each action
             for(int i=0;i<actions.size();++i)
             {
@@ -118,7 +119,6 @@ public:
             //std::discrete_distribution<int> distribution( weights.begin(), weights.end()) ;
         }
         // add the next action in queue as a child
-
         return add_child_with_action( actions[children.size()],node_id_ );
     }
 

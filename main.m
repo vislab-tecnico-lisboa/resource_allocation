@@ -17,7 +17,7 @@ DefaultMask = makingDefaultMask();
 image_dir = 'data/train/TUD-Stadtmitte/img1/';
 
 % Create System objects used for reading video, detecting moving objects, and displaying the results.
-obj = setupSystemObjects('data/train/TUD-Stadtmitte/img1/*.jpg');
+%obj = setupSystemObjects('data/train/TUD-Stadtmitte/img1/*.jpg');
 
 % Load the image files. Each image, a frame
 image_files = dir([image_dir '*.jpg']);
@@ -44,10 +44,12 @@ state_transition_model=...
     0,0,0,1,0,0;...
     0,0,0,0,1,0;...
     0,0,0,0,0,1]; % constant position
+
 state_measurement_model=...
     [1 0 0 0 0 0;...
     0 1 0 0 0 0;...
     0 0 1 0 0 0];
+
 state_init_state_covariance=[...
     10 0 0 10 0 0;...
     0 10 0 0 10 0;...
@@ -63,6 +65,7 @@ state_process_noise=[...
     0 0 0 10.0 0 0;...
     0 0 0 0 10.0 0;...
     0 0 0 0 0 2.0];
+
 state_measurement_noise=[...
     10 0 0;...
     0 10 0;...
@@ -73,7 +76,7 @@ state_measurement_noise=[...
 %state_measurement_noise = state_measurement_noise;
 
 %% optimization parameters
-max_items_=[3];             % max regions to be process
+max_items_=[1];             % max regions to be process
 capacity_constraints_=[1.0]; % percentage of image to be process at each time instant
 
 max_simulation_time_millis=1000;
@@ -84,7 +87,6 @@ overlap_ratio=0.7;
 
 min_width=52;
 min_height=128;
-
 
 %v = VideoReader('resource_allocation/dataset/cvpr10_tud_stadtmitte/cvpr10_tud_stadtmitte.avi');
 frame_size = size(imread([image_dir image_files(1).name]));
@@ -148,10 +150,13 @@ for c1=1:length(max_items_)
                 
                 
                 [action,optimization_time,explored_actions,explored_nodes]=compute_action(tracks,optimization_);
-                
-                if explored_nodes
-                    figure(2)
+                figure(1)
+                if size(explored_nodes>0)
+                    subplot(1,4,1)
+                    hold on
+                    set(gca,'Position',[0 0 0.25 1])
                     treeplot(explored_nodes);
+                    hold off
                 end
                 
                 optimization_times=[optimization_times optimization_time];
@@ -193,15 +198,11 @@ for c1=1:length(max_items_)
                             j=j+1;
                         end
                         
-                        
-                        
                         % first guarantee that de bbs are inside the image
                         x_before=rois(i,1);
                         y_before=rois(i,2);
                         width_before=rois(i,3);
                         height_before=rois(i,4);
-                        
-                        
                         
                         %discard bb that are outside
                         if x_before>frame_size(2) || y_before>frame_size(1)
@@ -232,11 +233,11 @@ for c1=1:length(max_items_)
                         
                         rois(i,:)=[x_after y_after width_after height_after];
                         
-                        
                         if width_after<min_width || height_after<min_height
                             rois(i,:)=[];
                             continue;
                         end
+                        
                         % discard too small bbs
                         real_height=min(rois(i,2)+rois(i,4),frame_size(1))- max(rois(i,2),0) ;
                         real_width=min(rois(i,1)+rois(i,3),frame_size(2)) - max(rois(i,1),0);
@@ -244,8 +245,7 @@ for c1=1:length(max_items_)
                             rois(i,:)=[];
                             continue;
                         end
-                        
-                        
+
                         i=i+1;
                     end
                     tic
@@ -268,8 +268,8 @@ for c1=1:length(max_items_)
                             BB(:,2) = BB(:,2) + rois(i,2);
                         end
                     end
-                    detection_times=[detection_times toc];
                     
+                    detection_times=[detection_times toc];
                 else
                     tic
                     %preBB = detections(detections(:,1) == frame_number,:);
@@ -279,7 +279,6 @@ for c1=1:length(max_items_)
                     %Filter out detections with bad score
                     BB = preBB(preBB(:, 5) > detThr, :);
                     detection_times=[detection_times toc];
-                    
                 end
                 if length(BB)==0
                     preBB = acfDetect(frame, detector);
@@ -298,40 +297,45 @@ for c1=1:length(max_items_)
                 %displayTrackingResults(obj,frame,tracks,detection_bboxes,rois);
                 
                 % attending regions
-                subplot(1,3,1)
+                subplot(1,4,2)
                 imshow(frame,'InitialMagnification','fit');
                 hold on;
-                set(gca,'Position',[0 0 0.3333 1])
+                set(gca,'Position',[0.25 0 0.25 1])
                 
                 for i=1:size(rois,1)
-                    rectangle('Position', rois(i,:),...
-                        'EdgeColor',[0 0 1], 'LineWidth', 3);
+                    rectangle('Position',...
+                        rois(i,:),...
+                        'EdgeColor',...
+                        [0 0 1],...
+                        'LineWidth',...
+                        3);
                     %text(detection_bboxes(i, 1), detection_bboxes(i, 2), ['id=' int2str(detection_bboxes(i, 5))], 'FontSize', 20);
                 end
                 drawnow
                 hold off
                 
                 % detections
-                subplot(1,3,2)
+                subplot(1,4,3)
                 imshow(frame,'InitialMagnification','fit');
                 hold on;
-                set(gca,'Position',[0.3333 0 0.3333 1])
-                
+                set(gca,'Position',[0.5 0 0.25 1]);
                 for i=1:size(detection_bboxes,1)
-                    
-                    rectangle('Position', detection_bboxes(i,1:4),...
-                        'EdgeColor','r', 'LineWidth', 3);
+                    rectangle('Position',...
+                        detection_bboxes(i,1:4),...
+                        'EdgeColor',...
+                        'r',...
+                        'LineWidth',...
+                        3);
                     %text(detection_bboxes(i, 1), detection_bboxes(i, 2), ['id=' int2str(detection_bboxes(i, 5))], 'FontSize', 20);
                 end
                 drawnow
                 hold off
                 
                 % tracks
-                subplot(1,3,3)
+                subplot(1,4,4)
                 imshow(frame,'InitialMagnification','fit');
                 hold on;
-                set(gca,'Position',[0.6666 0 0.3333 1])
-                
+                set(gca,'Position',[0.75 0 0.25 1])
                 uncertainties=zeros(size(tracks,2),1);
                 for i=1:size(tracks,2)
                     uncertainties(i)=det(tracks(i).stateKalmanFilter.StateCovariance(1:3,1:3));
@@ -347,7 +351,7 @@ for c1=1:length(max_items_)
                     rectangle('Position', [...
                         center(1)-width/2,...
                         center(2)-height/2,...
-                        width...
+                        width,...
                         height],...
                         'EdgeColor',uncertainties(i)*[0 1 0], 'LineWidth', 3);
                     text(...
@@ -358,11 +362,6 @@ for c1=1:length(max_items_)
                 end
                 drawnow
                 hold off
-                
-                
-                
-                
-                
                 
                 %% Extract Dario's color features
                 tic
@@ -416,12 +415,6 @@ for c1=1:length(max_items_)
                     i=i+1;
                 end
                 
-                
-                
-                
-                
-                
-                
                 %% tracking
                 
                 %predict
@@ -450,10 +443,7 @@ for c1=1:length(max_items_)
                     state_measurement_noise);
                 
                 tracking_times=[tracking_times toc];
-                
-                
-                
-                
+                                              
                 %% store results
                 for i=1:length(tracks)
                     conf=1;
@@ -463,10 +453,7 @@ for c1=1:length(max_items_)
                 
                 str_disp = sprintf(' processing frame %d of %d',frame_number,n_files);
                 disp(str_disp);
-            end
-            
-            
-            
+            end 
             
             %% The results must be wriiten in the MoTChallenge res/data/[datasetname.txt] for evaluation
             csvwrite('data/res/TUD-Stadtmitte.txt', results);

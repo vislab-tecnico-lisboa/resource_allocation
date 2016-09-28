@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     unsigned int total_area=width*height;
 
     //resource constraints
-    unsigned int max_targets_=2;
+    unsigned int max_targets_=1;
     float max_area_ratio_=100000.0;
 
     // region size
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
         pedestrian_beliefs.push_back(tracking::Belief(alpha_c,alpha_s,i,transitionMatrix,measurementMatrix,processNoiseCov,state,errorCovPre));
     }
 
-    unsigned int max_millis=1000;
+    unsigned int max_millis=100;
     unsigned int simulation_depth=3;
 
 

@@ -174,6 +174,7 @@ public:
     Action run(const Belief& current_belief, std::vector<int>* explored_actions = nullptr, std::vector<int>* explored_nodes= nullptr) {
         // initialize timer
         timer.init();
+        explored_nodes->push_back(0);
 
         int node_id=0;
         // initialize root TreeNode with current state
@@ -195,44 +196,32 @@ public:
                 assert(node);	// sanity check
             }
 
-            //std::cout << "Expand"<< std::endl;
+            // std::cout << "Expand" << std::endl;
             // 2. EXPAND by adding a single child (if not terminal or not fully expanded)
             if(!node->is_fully_expanded() && !node->is_terminal())
             {
                 node = node->expand(++node_id);
-            }
-            else
-            {
-                std::cout << "YAH"<< std::endl;
-                // This node should never be visited again (UCT NOT THE BEST APPROACH)
-                node->set_num_visits(10000000000000000000);
-                std::cout << "YO"<<std::endl;
-                continue;
 
-            }
-
-            // add to history
-            if(explored_actions)
-            {
-                if(node->get_parent())
+                // add to history
+                if(explored_actions)
                 {
-                    int parent_node_id=node->get_parent()->get_id();
-                    int action_id=node->get_action().id;
-                    int depth=node->get_depth();
-
-                    std::cout << parent_node_id << " " << action_id<< std::endl;
-                    explored_actions->push_back(action_id);
-
-                    explored_nodes->push_back(parent_node_id);
+                    if(node->get_parent())
+                    {
+                        int parent_node_id=node->get_parent()->get_id()+1;
+                        int action_id=node->get_action().id;
+                        int depth=node->get_depth();
+                        //std::cout << parent_node_id << " " << node->get_id() << " " << action_id << std::endl;
+                        explored_actions->push_back(action_id);
+                        explored_nodes->push_back(parent_node_id);
+                    }
                 }
             }
-
 
             // 3. SIMULATE (if not terminal)
             // Copy the belief
             Belief belief(node->get_belief());
             //std::cout << "Simulate"<< std::endl;
-        // HA AQUI BUG!!! (AS ACÇOES MUDAM LA DENTRO; DEVIA SER UMA HARD COPY)
+            // HA AQUI BUG!!! (AS ACÇOES MUDAM LA DENTRO; DEVIA SER UMA HARD COPY)
             if(!node->is_terminal())
             {
                 Action action;
@@ -242,7 +231,6 @@ public:
 
                     if(belief.get_random_action(action))
                     {
-                        //std::cout << "  simulation action:"<< action <<std::endl;
                         belief.apply_action(action);
                     }
                     else
