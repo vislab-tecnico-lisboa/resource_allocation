@@ -21,17 +21,22 @@ public:
 
     }
 
-    MultipleAction(const int & max_attend)
+
+    MultipleAction(const int & max_attend, const unsigned int & id_): id(id_)
     {
         //std::cout << " max_attend:"<<max_attend<< std::endl;
         attend.resize(max_attend);
     }
 
+    unsigned int get_id()
+    {
+        return id;
+    }
 
 
 
     std::vector<int> attend;
-
+    unsigned int id;
     friend inline std::ostream& operator<<(std::ostream& os, const MultipleAction &b)
     {
         std::cout << "[";
@@ -90,7 +95,8 @@ public:
         //actions.reserve(possible_actions);
         for(int i=0; i<possible_actions;++i)
         {
-            actions.push_back(max_attend);
+            int id=i+1;
+            actions.push_back(MultipleAction(max_attend,id));
         }
 
         // Create combinations
@@ -116,6 +122,8 @@ public:
         }
         return r;
     }
+
+
 
     // whether or not this belief is terminal (reached end)
     bool is_terminal() {
@@ -168,7 +176,22 @@ public:
 
     // get a random action, return false if no actions found
     bool get_random_action(MultipleAction& action) const {
-        int action_index=rand()%actions.size();
+        // This should be more clever
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::vector<int> probabilities;
+
+        for(int i=0; i<actions.size();++i)
+        {
+            probabilities.push_back(evaluateAttendingAction(actions[i]));
+        }
+
+        std::discrete_distribution<> d(probabilities.begin(),probabilities.end());
+
+
+        //int action_index=rand()%actions.size();
+        int action_index=d(gen);
         action=actions[action_index];
         return true;
     }
@@ -176,15 +199,26 @@ public:
 
     // evaluate this state and return a vector of rewards (for each agent)
     const float evaluate() const  {
-        float reward;
+        float reward=0.0;
         for(int i=0; i<beliefs.size();++i)
         {
-            // Negative entropy
-            reward+=-beliefs[i].evaluate();
+            //negative entropy (closer to zero is better)
+            reward+=-beliefs[i].entropy();
         }
 
         return reward;
+    }
 
+    // evaluate attending action
+    const float evaluateAttendingAction(const MultipleAction & action) const  {
+        float reward=0.0;
+        for(int i=0; i<action.attend.size();++i)
+        {
+            // Bigger entropy should be better
+            reward+=beliefs[action.attend[i]].entropy();
+        }
+
+        return reward;
     }
 
 

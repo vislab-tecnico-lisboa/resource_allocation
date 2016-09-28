@@ -171,15 +171,15 @@ public:
 
 
     //--------------------------------------------------------------
-    Action run(const Belief& current_belief, unsigned int seed = 1) {
+    Action run(const Belief& current_belief, std::vector<int>* explored_actions = nullptr, std::vector<int>* explored_nodes= nullptr) {
         // initialize timer
         timer.init();
 
+        int node_id=0;
         // initialize root TreeNode with current state
         TreeNode* root_node(new TreeNode(current_belief));
 
         TreeNode* best_node = NULL;
-
         // iterate
         iterations = 0;
         while(true)
@@ -197,13 +197,42 @@ public:
 
             //std::cout << "Expand"<< std::endl;
             // 2. EXPAND by adding a single child (if not terminal or not fully expanded)
-            if(!node->is_fully_expanded() && !node->is_terminal()) node = node->expand();
+            if(!node->is_fully_expanded() && !node->is_terminal())
+            {
+                node = node->expand(++node_id);
+            }
+            else
+            {
+                std::cout << "YAH"<< std::endl;
+                // This node should never be visited again (UCT NOT THE BEST APPROACH)
+                node->set_num_visits(10000000000000000000);
+                std::cout << "YO"<<std::endl;
+                continue;
+
+            }
+
+            // add to history
+            if(explored_actions)
+            {
+                if(node->get_parent())
+                {
+                    int parent_node_id=node->get_parent()->get_id();
+                    int action_id=node->get_action().id;
+                    int depth=node->get_depth();
+
+                    std::cout << parent_node_id << " " << action_id<< std::endl;
+                    explored_actions->push_back(action_id);
+
+                    explored_nodes->push_back(parent_node_id);
+                }
+            }
+
 
             // 3. SIMULATE (if not terminal)
             // Copy the belief
             Belief belief(node->get_belief());
             //std::cout << "Simulate"<< std::endl;
-
+        // HA AQUI BUG!!! (AS ACÇOES MUDAM LA DENTRO; DEVIA SER UMA HARD COPY)
             if(!node->is_terminal())
             {
                 Action action;
@@ -223,13 +252,11 @@ public:
                 }
             }
 
-            // get rewards vector for all agents
+            // get reward for leaf node
             float reward = belief.evaluate();
 
-            // add to history
 
             // 4. BACK PROPAGATION
-
             int i=0;
             while(node) {
                 node->update(reward);
@@ -258,6 +285,7 @@ public:
 
         delete root_node;
 
+        std::cout << "vou sair"<< std::endl;
         return best_action;
     }
 

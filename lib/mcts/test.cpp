@@ -2,6 +2,8 @@
 #include "MultiplePedestrianBelief.h"
 #include "ofxMSAmcts.h"
 #include "MSALoopTimer.h"
+#include "TreeNodeT.h"
+
 int main(int argc, char** argv)
 {
     // Image size
@@ -10,17 +12,16 @@ int main(int argc, char** argv)
     unsigned int total_area=width*height;
 
     //resource constraints
-    unsigned int max_targets_=1;
-    float max_area_ratio_=0.2;
+    unsigned int max_targets_=2;
+    float max_area_ratio_=100000.0;
 
     // region size
     float alpha_c=5;
     float alpha_s=5;
 
 
-
     // Initialize targets
-    unsigned int total_targets_=12;
+    unsigned int total_targets_=10;
     std::vector<tracking::Belief> pedestrian_beliefs;
 
     pedestrian_beliefs.reserve(total_targets_);
@@ -54,7 +55,7 @@ int main(int argc, char** argv)
         pedestrian_beliefs.push_back(tracking::Belief(alpha_c,alpha_s,i,transitionMatrix,measurementMatrix,processNoiseCov,state,errorCovPre));
     }
 
-    unsigned int max_millis=100;
+    unsigned int max_millis=1000;
     unsigned int simulation_depth=3;
 
 
@@ -62,12 +63,13 @@ int main(int argc, char** argv)
     msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> uct(max_millis, simulation_depth);
 
 
-    max_targets_=10;
     //while(max_targets_>=2)
     {
         tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,max_targets_,total_area,max_area_ratio_);
+        std::vector<int>* explored_actions(new std::vector<int>);
+        std::vector<int>* explored_nodes(new std::vector<int>);
 
-        tracking::MultipleAction mult_action=uct.run(belief);
+        tracking::MultipleAction mult_action=uct.run(belief,explored_actions,explored_nodes);
 
     }
 

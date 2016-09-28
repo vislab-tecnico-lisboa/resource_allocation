@@ -49,40 +49,40 @@ state_measurement_model=...
     0 1 0 0 0 0;...
     0 0 1 0 0 0];
 state_init_state_covariance=[...
-    100 0 0 100 0 0;...
-    0 100 0 0 100 0;...
-    0 0 100 0 0 100;...
-    0 0 0 100 0 0;...
-    0 0 0 0 100 0;...
-    0 0 0 0 0 100];
+    10 0 0 10 0 0;...
+    0 10 0 0 10 0;...
+    0 0  2 0  0 2;...
+    0 0  0 10 0 0;...
+    0 0  0 0 10 0;...
+    0 0  0 0 0 10];
 
 state_process_noise=[...
-    100.0 0 0 0 0 0;...
-    0 100.0 0 0 0 0;...
-    0 0 100.0 0 0 0;...
-    0 0 0 100.0 0 0;...
-    0 0 0 0 100.0 0;...
-    0 0 0 0 0 0.0001];
+    10.0 0 0 0 0 0;...
+    0 10.0 0 0 0 0;...
+    0 0 2.0 0 0 0;...
+    0 0 0 10.0 0 0;...
+    0 0 0 0 10.0 0;...
+    0 0 0 0 0 2.0];
 state_measurement_noise=[...
-    1 0 0;...
-    0 1 0;...
-    0 0 0.001];
+    10 0 0;...
+    0 10 0;...
+    0 0 2.0];
 
-state_init_state_covariance = state_init_state_covariance*10000;
-state_process_noise = state_process_noise*10;
-state_measurement_noise = state_measurement_noise*1000;
+%state_init_state_covariance = state_init_state_covariance;
+%state_process_noise = state_process_noise;
+%state_measurement_noise = state_measurement_noise;
 
 %% optimization parameters
-max_items_=[1 2 3 4 5];             % max regions to be process
-capacity_constraints_=[0.1 0.25 0.5 0.75 1.0]; % percentage of image to be process at each time instant
+max_items_=[3];             % max regions to be process
+capacity_constraints_=[1.0]; % percentage of image to be process at each time instant
 
-max_simulation_time_millis=50;
+max_simulation_time_millis=1000;
 simulation_depth=3;
 alpha_c=1.0;
 alpha_s=1.0;
-overlap_ratio=0.1;
+overlap_ratio=0.7;
 
-min_width=96;
+min_width=52;
 min_height=128;
 
 
@@ -92,7 +92,7 @@ frame_size = size(imread([image_dir image_files(1).name]));
 %detector=initializeDetector();
 min_scale=2.0;
 %% Initialize trackers
-tracks = initializeTracks(min_height); % Create an empty array of tracks.
+tracks = initializeTracks(min_width,min_height); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
 
 %% Detect moving objects, and track them across video frames.
@@ -103,6 +103,8 @@ average_tracking_times=zeros(length(max_items_),length(capacity_constraints_),nu
 average_mot=zeros(length(max_items_),length(capacity_constraints_),num_exp,14);
 iteration_=0;
 total_iterations=length(max_items_)*length(capacity_constraints_)*num_exp*n_files;
+
+figure(1)
 for c1=1:length(max_items_)
     max_items=max_items_(c1);
     for c2=1:length(capacity_constraints_)
@@ -145,7 +147,13 @@ for c1=1:length(max_items_)
                 end
                 
                 
-                [action,optimization_time]=compute_action(tracks,optimization_);
+                [action,optimization_time,explored_actions,explored_nodes]=compute_action(tracks,optimization_);
+                
+                if explored_nodes
+                    figure(2)
+                    treeplot(explored_nodes);
+                end
+                
                 optimization_times=[optimization_times optimization_time];
                 rois=compute_rois(tracks,action,min_width,min_height,alpha_c,alpha_s);
                 %rois=[];
@@ -157,6 +165,7 @@ for c1=1:length(max_items_)
                     i=1;
                     while i<=size(rois,1)
                         if rois(i,3)<0 || rois(i,4)<0
+                            rois(i,:)=[];
                             continue
                         end
                         
@@ -164,10 +173,11 @@ for c1=1:length(max_items_)
                         j=i+1;
                         while j<=size(rois,1)
                             if rois(j,3)<0 || rois(j,4)<0
-                                disp('foda-se');
+                                rois(j,:)=[];
+                                continue
                             end
                             
-                            
+                            %merge if bbs they overlap more than overlap_ration
                             if bboxOverlapRatio(rois(i,:),rois(j,:)) >overlap_ratio
                                 upper_x=min(rois(i,1),rois(j,1));
                                 upper_y=min(rois(i,2),rois(j,2));
@@ -175,9 +185,7 @@ for c1=1:length(max_items_)
                                 down_y=max(rois(i,2)+rois(i,4),rois(j,2)+rois(j,4));
                                 new_width=down_x-upper_x;
                                 new_height=down_y-upper_y;
-                                if new_width<0 || new_height<0
-                                    ola=1;
-                                end
+                                
                                 rois(i,:)=[upper_x upper_y new_width new_height];
                                 rois(j,:)=[];
                                 continue;
@@ -224,9 +232,6 @@ for c1=1:length(max_items_)
                         
                         rois(i,:)=[x_after y_after width_after height_after];
                         
-                        if x_after<0 || y_after <0
-                            disp('noooooooooooooooooooo');
-                        end
                         
                         if width_after<min_width || height_after<min_height
                             rois(i,:)=[];
@@ -281,10 +286,82 @@ for c1=1:length(max_items_)
                     
                     %Filter out detections with bad score
                     BB = preBB(preBB(:, 5) > detThr, :);
-                    disp('foda-se')
                 end
                 detection_bboxes=[BB(:,1) BB(:,2) BB(:,3) BB(:,4)];
                 detection_centroids=[BB(:,1)+BB(:,3)*0.5 BB(:,2)+BB(:,4)*0.5];
+                
+                
+                
+                
+                
+                %% display results
+                %displayTrackingResults(obj,frame,tracks,detection_bboxes,rois);
+                
+                % attending regions
+                subplot(1,3,1)
+                imshow(frame,'InitialMagnification','fit');
+                hold on;
+                set(gca,'Position',[0 0 0.3333 1])
+                
+                for i=1:size(rois,1)
+                    rectangle('Position', rois(i,:),...
+                        'EdgeColor',[0 0 1], 'LineWidth', 3);
+                    %text(detection_bboxes(i, 1), detection_bboxes(i, 2), ['id=' int2str(detection_bboxes(i, 5))], 'FontSize', 20);
+                end
+                drawnow
+                hold off
+                
+                % detections
+                subplot(1,3,2)
+                imshow(frame,'InitialMagnification','fit');
+                hold on;
+                set(gca,'Position',[0.3333 0 0.3333 1])
+                
+                for i=1:size(detection_bboxes,1)
+                    
+                    rectangle('Position', detection_bboxes(i,1:4),...
+                        'EdgeColor','r', 'LineWidth', 3);
+                    %text(detection_bboxes(i, 1), detection_bboxes(i, 2), ['id=' int2str(detection_bboxes(i, 5))], 'FontSize', 20);
+                end
+                drawnow
+                hold off
+                
+                % tracks
+                subplot(1,3,3)
+                imshow(frame,'InitialMagnification','fit');
+                hold on;
+                set(gca,'Position',[0.6666 0 0.3333 1])
+                
+                uncertainties=zeros(size(tracks,2),1);
+                for i=1:size(tracks,2)
+                    uncertainties(i)=det(tracks(i).stateKalmanFilter.StateCovariance(1:3,1:3));
+                end
+                uncertainties=uncertainties/sum(uncertainties);
+                for i=1:size(tracks,2)
+                    sc = tracks(i).stateKalmanFilter.State(3);
+                    center = tracks(i).stateKalmanFilter.State(1:2);
+                    
+                    width = min_width*sc;
+                    height = min_height*sc;
+                    
+                    rectangle('Position', [...
+                        center(1)-width/2,...
+                        center(2)-height/2,...
+                        width...
+                        height],...
+                        'EdgeColor',uncertainties(i)*[0 1 0], 'LineWidth', 3);
+                    text(...
+                        center(1)-width/2,...
+                        center(2)-height/2-20,...
+                        ['unc=' num2str(uncertainties(i))],...
+                        'FontSize', 10, 'Color', [1 1 1]);
+                end
+                drawnow
+                hold off
+                
+                
+                
+                
                 
                 
                 %% Extract Dario's color features
@@ -340,6 +417,11 @@ for c1=1:length(max_items_)
                 end
                 
                 
+                
+                
+                
+                
+                
                 %% tracking
                 
                 %predict
@@ -358,6 +440,7 @@ for c1=1:length(max_items_)
                     detection_centroids,...
                     detection_bboxes,...
                     BVTHistograms,...
+                    min_width,...
                     min_height, ...
                     nextId,...
                     state_transition_model,...
@@ -368,10 +451,10 @@ for c1=1:length(max_items_)
                 
                 tracking_times=[tracking_times toc];
                 
-                %% display results
-                %displayTrackingResults(obj,frame,tracks,detection_bboxes,rois);
                 
-                % store results
+                
+                
+                %% store results
                 for i=1:length(tracks)
                     conf=1;
                     preResults = [frame_number, tracks(i).id, tracks(i).bbox(1), tracks(i).bbox(2), tracks(i).bbox(3), tracks(i).bbox(4), -1, -1, -1, -1];
@@ -405,21 +488,27 @@ for c1=1:length(max_items_)
     %end c2 param
 end
 %end c1 param
-mean_average_optimization_times=mean(average_optimization_times,2);
-mean_average_detection_times=mean(average_detection_times,2);
-mean_average_tracking_times=mean(average_tracking_times,2);
+mean_average_optimization_times=mean(average_optimization_times,3);
+mean_average_detection_times=mean(average_detection_times,3);
+mean_average_tracking_times=mean(average_tracking_times,3);
 mean_average_total_times=mean_average_optimization_times+mean_average_detection_times+mean_average_tracking_times;
-mean_average_mot=mean(average_mot,2);
+mean_average_mot=mean(average_mot,3);
 
-save('teste.mat','mean_average_optimization_times','mean_average_detection_times',...
-    'mean_average_tracking_times','mean_average_total_times','mean_average_mot','num_exp','max_items_','capacity_constraints_',...
+save('teste.mat',...
+    'average_optimization_times',...
+    'average_detection_times',...
+    'average_tracking_times',...
+    'average_mot',...
+    'num_exp',...
+    'max_items_',...
+    'capacity_constraints_',...
     'max_simulation_time_millis',...
     'simulation_depth',...
     'alpha_c',...
     'alpha_s',...
     'overlap_ratio');
 
-figure(1)
-bar(mean_average_total_times)
-xlabel('k_{max}')
-ylabel('runtime (s)')
+% figure(1)
+% bar(mean_average_total_times)
+% xlabel('k_{max}')
+% ylabel('runtime (s)')

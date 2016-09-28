@@ -24,7 +24,9 @@ for i = 1:numAssignedTracks
     sc = tracks(trackPosition).stateKalmanFilter.State(3);
     center = tracks(trackPosition).stateKalmanFilter.State(1:2);
     min_height = tracks(trackPosition).min_height;
-    width = 40*sc;
+    min_width = tracks(trackPosition).min_width;
+
+    width = min_width*sc;
     height = min_height*sc;
     
     bbox(1) = center(1)-width/2;

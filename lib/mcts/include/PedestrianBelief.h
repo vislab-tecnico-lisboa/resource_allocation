@@ -144,9 +144,19 @@ public:
     // evaluate this state and return a vector of rewards (for each agent)
     const float evaluate() const  {
 
-
         // Negative entropy
         float reward=-std::log(cv::determinant(covariance));
+
+        //std::cout << "  reward:" << reward << std::endl;
+        return reward;
+
+    }
+
+    // evaluate this state and return a vector of rewards (for each agent)
+    const float entropy() const  {
+
+        // entropy
+        float reward=std::log(cv::determinant(covariance));
 
         //std::cout << "  reward:" << reward << std::endl;
         return reward;

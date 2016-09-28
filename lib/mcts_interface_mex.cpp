@@ -85,7 +85,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         total_area=width*height;
         max_targets=max_items;
         max_area_ratio=capacity_percentage;
-        std::cout <<"capacity_percentage:" << capacity_percentage << std::endl;
+        //std::cout <<"capacity_percentage:" << capacity_percentage << std::endl;
         msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> *mcts_= new msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction>(
                 (unsigned int) max_simulation_time_millis, 
                 (unsigned int) simulation_depth);
@@ -116,7 +116,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (!strcmp("get_action", cmd))
     {
         // Check parameters
-        std::cout << nrhs << std::endl;
+        //std::cout << nrhs << std::endl;
         if (nrhs !=4)
             mexErrMsgTxt("get action: Unexpected arguments.");
         const mwSize* size=mxGetDimensions(prhs[2]);
@@ -159,17 +159,25 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             pedestrian_beliefs.push_back(tracking::Belief(alpha_c,alpha_s,i,transitionMatrix,measurementMatrix,processNoiseCov,state_mean,state_covariance));
         }
 
-        tic();
 
         tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,max_targets,total_area,max_area_ratio);
-        
-        tracking::MultipleAction mult_action = mcts_->run(belief);
-        
+
+        std::vector<int>* explored_actions(new std::vector<int>);
+        std::vector<int>* explored_nodes(new std::vector<int>);
+        std::cout << "ola" << std::endl;
+        tic();
+
+        tracking::MultipleAction mult_action = mcts_->run(belief,explored_actions,explored_nodes);
+        std::cout << "adeus" << std::endl;
         double time_elapsed=toc_();
         //std::cout << "time elapsed:" << time_elapsed << std::endl;
         plhs[0]=MxArray(mult_action.attend);
         plhs[1]=mxCreateDoubleScalar(time_elapsed);
+        plhs[2]=MxArray(*explored_actions);
+        plhs[3]=MxArray(*explored_nodes);
 
+        delete explored_actions;
+        delete explored_nodes;
         return;
     }
     
