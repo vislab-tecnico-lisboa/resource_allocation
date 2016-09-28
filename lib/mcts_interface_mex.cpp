@@ -159,16 +159,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             pedestrian_beliefs.push_back(tracking::Belief(alpha_c,alpha_s,i,transitionMatrix,measurementMatrix,processNoiseCov,state_mean,state_covariance));
         }
 
-
-        tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,max_targets,total_area,max_area_ratio);
-
         std::vector<int>* explored_actions(new std::vector<int>);
         std::vector<int>* explored_nodes(new std::vector<int>);
-        std::cout << "ola" << std::endl;
+        
+        tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,max_targets,total_area,max_area_ratio);
         tic();
-
         tracking::MultipleAction mult_action = mcts_->run(belief,explored_actions,explored_nodes);
-        std::cout << "adeus" << std::endl;
         double time_elapsed=toc_();
         //std::cout << "time elapsed:" << time_elapsed << std::endl;
         plhs[0]=MxArray(mult_action.attend);

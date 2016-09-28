@@ -273,7 +273,6 @@ public:
 
         delete root_node;
 
-        std::cout << "vou sair"<< std::endl;
         return best_action;
     }
 

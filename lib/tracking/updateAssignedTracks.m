@@ -1,4 +1,4 @@
-function tracks=updateAssignedTracks(tracks,assignments,centroids,bboxes, bvtHists)
+function tracks=updateAssignedTracks(tracks,assignments,centroids,bboxes, bvtHists, min_width, min_height)
 numAssignedTracks = size(assignments, 1);
 for i = 1:numAssignedTracks
     trackIdx = assignments(i, 1);
@@ -15,6 +15,10 @@ for i = 1:numAssignedTracks
         end
     end
     
+    tracks(trackPosition).stateKalmanFilter.MeasurementNoise=observation_model(...
+        tracks(trackPosition).stateKalmanFilter.State(1:3),...
+        min_width,...
+        min_height);
     % Correct the estimate of the object's location
     % using the new detection.
     correct(tracks(trackPosition).stateKalmanFilter, [centroid bbox(4)/tracks(trackPosition).min_height]);

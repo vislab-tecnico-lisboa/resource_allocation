@@ -424,7 +424,7 @@ for c1=1:length(max_items_)
                 [assignments, unassignedTracks, unassignedDetections ] = associateData( tracks, BVTHistograms, detection_centroids );
                 
                 %update
-                tracks=updateAssignedTracks(tracks,assignments,detection_centroids,detection_bboxes, BVTHistograms);
+                tracks=updateAssignedTracks(tracks,assignments,detection_centroids,detection_bboxes, BVTHistograms,min_width,min_height);
                 tracks=updateUnassignedTracks(tracks,unassignedTracks);
                 tracks=deleteLostTracks(tracks,...
                     invisibleForTooLong);

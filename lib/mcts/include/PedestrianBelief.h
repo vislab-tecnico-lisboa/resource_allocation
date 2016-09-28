@@ -8,7 +8,7 @@
 #define kNumActions		2
 #define kTurnRangeMin	-30
 #define kTurnRangeMax	30
-const double uniform_const=1.0/12.0;
+const double uniform_const=1.0;
 const double scales_per_octave=8.0;
 using namespace msa::mcts;
 using namespace std;
@@ -171,7 +171,7 @@ public:
     MyKalmanFilter kalman_filter;
     cv::Mat mean;
     cv::Mat covariance;
-    float min_x=52, min_y=128;
+    float min_width=52, min_height=128;
 
     void reset() {
 
@@ -186,8 +186,8 @@ public:
     {
         int n=8.0*log2(state.at<float>(2));
         float q_scale =(pow(2,(float)(n+1)/scales_per_octave)-pow(2,(float)n/scales_per_octave));
-        float q_x=min_x*q_scale*0.5;
-        float q_y=min_y*q_scale*0.5;
+        float q_x=min_width*q_scale*0.5;
+        float q_y=min_height*q_scale*0.5;
 
         cv::Mat cov=(cv::Mat_<float>(3, 3) << q_x*q_x*uniform_const, 0, 0,    0, q_y*q_y*uniform_const, 0,    0, 0, q_scale*q_scale*uniform_const);
         kalman_filter.measurementNoiseCov=cov;
@@ -201,8 +201,8 @@ public:
         float scale_uncertainty=sqrt(kalman_filter.errorCovPre.at<float>(2,2));
 
         int total_scale=(scale+alpha_c*centroid_uncertainty+alpha_s*scale_uncertainty);
-        int n_rows=total_scale * min_y;
-        int n_cols=total_scale * min_x;
+        int n_rows=total_scale * min_height;
+        int n_cols=total_scale * min_width;
         //std::cout << "  centroid_uncertainty:"<< centroid_uncertainty << " scale_uncertainty:"<< scale_uncertainty << std::endl;
 
         float area=n_rows*n_cols;
