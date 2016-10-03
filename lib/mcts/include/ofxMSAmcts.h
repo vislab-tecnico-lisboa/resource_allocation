@@ -266,6 +266,8 @@ public:
 
         }
 
+        std::cout << "total_iterations: "<< iterations << std::endl;
+
         Action best_action;
         // return best node's action
         if(best_node)

@@ -73,6 +73,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         double max_simulation_time_millis=*(double *) mxGetPr(prhs[7]);
         double simulation_depth=*(double *) mxGetPr(prhs[8]);
 
+
         /*std::cout << "width:"<<width << std::endl;
         std::cout << "height:"<<height << std::endl;
         std::cout << "capacity_percentage:"<<capacity_percentage << std::endl;
@@ -117,18 +118,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     {
         // Check parameters
         //std::cout << nrhs << std::endl;
-        if (nrhs !=4)
+        if (nrhs !=6)
             mexErrMsgTxt("get action: Unexpected arguments.");
         const mwSize* size=mxGetDimensions(prhs[2]);
 
-        cv::Mat state_means=cv::Mat(size[1],size[0],CV_64F,mxGetData(prhs[2]),0);
-        
-        
+        cv::Mat state_means=cv::Mat(size[1],size[0],CV_64F,mxGetData(prhs[2]),0);       
         std::vector<tracking::Belief> pedestrian_beliefs;
 
-        // region size
-        float alpha_c=5;
-        float alpha_s=5;
         
         // intialization of Kalman filter
         cv::Mat transitionMatrix = *(cv::Mat_<float>(kNumState, kNumState) << 1,0,0,1,0,0, 0,1,0,0,1,0, 0,0,1,0,0,1, 0,0,0,1,0,0, 0,0,0,0,1,0, 0,0,0,0,0,1);
@@ -141,7 +137,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         dims = mxGetDimensions(prhs[3]);
         int total_targets_=dims[0];
         pedestrian_beliefs.reserve(total_targets_);
-
+        double alpha_c=*(double *) mxGetPr(prhs[4]);
+        double alpha_s=*(double *) mxGetPr(prhs[5]);
+        
+        std::cout << "alpha_c:" << alpha_c <<" alpha_s:" << alpha_s << std::endl;
         for (jcell=0; jcell<dims[0]; jcell++) {
             // Get covariance
             mxArray *cellArray;
@@ -150,14 +149,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             cv::Mat state_covariance=cv::Mat(size[1],size[0],CV_64F,mxGetData(cellArray),0);
             //std::cout << state_covariance << std::endl;
             
-            int i=(int)jcell;
+            unsigned int i=(unsigned int)jcell;
             cv::Mat state_mean=state_means(cv::Rect(0,i,6,1)).t();
             
             state_mean.convertTo(state_mean, CV_32F);
             state_covariance.convertTo(state_covariance, CV_32F);
 
-            pedestrian_beliefs.push_back(tracking::Belief(alpha_c,alpha_s,i,transitionMatrix,measurementMatrix,processNoiseCov,state_mean,state_covariance));
+            pedestrian_beliefs.push_back(tracking::Belief((float)alpha_c,(float)alpha_s,i,transitionMatrix,measurementMatrix,processNoiseCov,state_mean,state_covariance));
         }
+        
+
 
         std::vector<int>* explored_actions(new std::vector<int>);
         std::vector<int>* explored_nodes(new std::vector<int>);

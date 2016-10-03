@@ -16,8 +16,8 @@ int main(int argc, char** argv)
     float max_area_ratio_=100000.0;
 
     // region size
-    float alpha_c=5;
-    float alpha_s=5;
+    float alpha_c=0;
+    float alpha_s=0;
 
 
     // Initialize targets
@@ -25,7 +25,7 @@ int main(int argc, char** argv)
     std::vector<tracking::Belief> pedestrian_beliefs;
 
     pedestrian_beliefs.reserve(total_targets_);
-    for(int i=0;i<total_targets_;++i)
+    for(unsigned int i=0;i<total_targets_;++i)
     {
         float T = 1.0/10.0;
 

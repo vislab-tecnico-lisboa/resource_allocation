@@ -135,12 +135,11 @@ public:
             area+=beliefs[i].compute_observation_region_area();
             if(area>max_area)
             {
-                //std::cout << "area:"<< area << " max area:"<< max_area << std::endl;
 
                 return true;
             }
         }
-        //std::cout << "milagre"<< std::endl;
+
         return false;
     }
 

@@ -59,7 +59,9 @@ public:
         kalman_filter(other.kalman_filter),
         mean(other.mean),
         covariance(other.covariance),
-        id(other.id)
+        id(other.id),
+        alpha_c(other.alpha_c),
+        alpha_s(other.alpha_s)
     {}
 
     Belief(const float & alpha_c_,
@@ -120,9 +122,9 @@ public:
         }
 
         // Predict
+
         mean = kalman_filter.predict();
         covariance = kalman_filter.errorCovPre.rowRange(0,3).colRange(0,3);
-        //std::cout << "  cov:"<< covariance << std::endl<< std::endl;
     }
 
 
@@ -196,16 +198,19 @@ public:
 
     float compute_observation_region_area()
     {
-        float scale=kalman_filter.statePre.at<float>(2);
-        float centroid_uncertainty=sqrt(kalman_filter.errorCovPre.at<float>(0,0));
-        float scale_uncertainty=sqrt(kalman_filter.errorCovPre.at<float>(2,2));
+        //std::cout << "alpha_c:"<< alpha_c<< " alpha_s:"<< alpha_s << std::endl;
 
-        int total_scale=(scale+alpha_c*centroid_uncertainty+alpha_s*scale_uncertainty);
+        float scale=mean.at<float>(2);
+        float centroid_uncertainty=sqrt(covariance.at<float>(0,0));
+        float scale_uncertainty=sqrt(covariance.at<float>(2,2));
+        float total_scale=(scale+alpha_c*centroid_uncertainty+alpha_s*scale_uncertainty);
         int n_rows=total_scale * min_height;
         int n_cols=total_scale * min_width;
-        //std::cout << "  centroid_uncertainty:"<< centroid_uncertainty << " scale_uncertainty:"<< scale_uncertainty << std::endl;
-
+        //std::cout << "scale:"<<scale<<"  centroid_uncertainty:"<< centroid_uncertainty << " scale_uncertainty:"<< scale_uncertainty << " total scle:" <<total_scale<< std::endl;
         float area=n_rows*n_cols;
+
+        //std::cout << "n_rows: "<< n_rows << " n_cols "<< n_cols << " area:" << area<<  std::endl;
+
         //std::cout << kalman_filter.errorCovPre.at<float>(2,2) << std::endl;
         return area;
         // Region size constraint: if total area > max allowed - > terminal belief
