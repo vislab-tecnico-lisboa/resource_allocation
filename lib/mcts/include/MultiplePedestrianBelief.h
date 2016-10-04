@@ -7,7 +7,7 @@
 
 #define kNumState 6
 #define kNumObs 3
-#define kNumActions		2
+#define kNumActions	2
 
 using namespace msa::mcts;
 using namespace std;
@@ -135,7 +135,6 @@ public:
             area+=beliefs[i].compute_observation_region_area();
             if(area>max_area)
             {
-
                 return true;
             }
         }

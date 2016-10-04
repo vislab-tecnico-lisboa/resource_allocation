@@ -125,57 +125,62 @@ for c1=1:length(max_items_)
                 frame = imread([image_dir image_files(frame_number).name]);
                 
                 %% dynamic resource allocation (POMDP - input current belief; output actions)
-                if max_items<size(tracks,2)
-                    optimization_=initializeMCTS(...
-                        frame_size(2),...
-                        frame_size(1),...
-                        capacity_constraint,...
-                        max_items,...
-                        min_width,...
-                        min_height,...
-                        max_simulation_time_millis,...
-                        simulation_depth);
-                else
-                    optimization_=initializeMCTS(...
-                        frame_size(2),...
-                        frame_size(1),...
-                        capacity_constraint,...
-                        size(tracks,2),...
-                        min_width,...
-                        min_height,...
-                        max_simulation_time_millis,...
-                        simulation_depth);
-                end
-                
-                % Get action
-                [action,optimization_time,explored_actions,explored_nodes]=compute_action(tracks,optimization_,alpha_c,alpha_s);
-                
-                % Update attended tracks
-                for i=1:size(tracks,2)
-                    tracks(i).attended=0;
-                end;
-                for i=1:size(tracks,2)
-                    for j=1:size(action,2)
-                        if action(j)==i
-                            tracks(i).attended=1;
+                if size(tracks)>0
+                    
+                    if max_items<size(tracks,2)
+                        optimization_=initializeMCTS(...
+                            frame_size(2),...
+                            frame_size(1),...
+                            capacity_constraint,...
+                            max_items,...
+                            min_width,...
+                            min_height,...
+                            max_simulation_time_millis,...
+                            simulation_depth);
+                    else
+                        optimization_=initializeMCTS(...
+                            frame_size(2),...
+                            frame_size(1),...
+                            capacity_constraint,...
+                            size(tracks,2),...
+                            min_width,...
+                            min_height,...
+                            max_simulation_time_millis,...
+                            simulation_depth);
+                    end
+                    
+                    % Get action
+                    
+                    [action,optimization_time,explored_actions,explored_nodes]=compute_action(tracks,optimization_,alpha_c,alpha_s);
+                    
+                    % Update attended tracks
+                    for i=1:size(tracks,2)
+                        tracks(i).attended=0;
+                    end;
+                    for i=1:size(tracks,2)
+                        for j=1:size(action,2)
+                            if action(j)==i
+                                tracks(i).attended=1;
+                            end
                         end
                     end
+                    figure(1)
+                    if size(explored_nodes>0)
+                        subplot(1,4,1)
+                        hold on
+                        set(gca,'Position',[0 0 0.25 1])
+                        treeplot(explored_nodes);
+                        hold off
+                    end
+                    
+                    optimization_times=[optimization_times optimization_time];
+                    rois=compute_rois(tracks,action,min_width,min_height,alpha_c,alpha_s);
+                    %rois=[];
+                    clear detection_bboxes;
+                    BB=[];
+                else
+                    rois=[];
                 end
-                figure(1)
-                if size(explored_nodes>0)
-                    subplot(1,4,1)
-                    hold on
-                    set(gca,'Position',[0 0 0.25 1])
-                    treeplot(explored_nodes);
-                    hold off
-                end
-                
-                optimization_times=[optimization_times optimization_time];
-                rois=compute_rois(tracks,action,min_width,min_height,alpha_c,alpha_s);
-                %rois=[];
-                clear detection_bboxes;
-                BB=[];
-                
                 %merge overlapping rois
                 if size(rois)>0
                     i=1;
@@ -185,37 +190,37 @@ for c1=1:length(max_items_)
                             continue
                         end
                         
-%                         %merge overlapping bbxs
-%                         j=i+1;
-%                         while j<=size(rois,1)
-%                             if rois(j,3)<0 || rois(j,4)<0
-%                                 rois(j,:)=[];
-%                                 continue
-%                             end
-%                             
-%                             %merge if bbs they overlap more than overlap_ration
-%                             if bboxOverlapRatio(rois(i,:),rois(j,:)) >overlap_ratio
-%                                 upper_x=min(rois(i,1),rois(j,1));
-%                                 upper_y=min(rois(i,2),rois(j,2));
-%                                 down_x=max(rois(i,1)+rois(i,3),rois(j,1)+rois(j,3));
-%                                 down_y=max(rois(i,2)+rois(i,4),rois(j,2)+rois(j,4));
-%                                 new_width=down_x-upper_x;
-%                                 new_height=down_y-upper_y;
-%                                 
-%                                 rois(i,:)=[upper_x upper_y new_width new_height];
-%                                 rois(j,:)=[];
-%                                 continue;
-%                             end
-%                             j=j+1;
-%                         end
+                        %                         %merge overlapping bbxs
+                        %                         j=i+1;
+                        %                         while j<=size(rois,1)
+                        %                             if rois(j,3)<0 || rois(j,4)<0
+                        %                                 rois(j,:)=[];
+                        %                                 continue
+                        %                             end
+                        %
+                        %                             %merge if bbs they overlap more than overlap_ration
+                        %                             if bboxOverlapRatio(rois(i,:),rois(j,:)) >overlap_ratio
+                        %                                 upper_x=min(rois(i,1),rois(j,1));
+                        %                                 upper_y=min(rois(i,2),rois(j,2));
+                        %                                 down_x=max(rois(i,1)+rois(i,3),rois(j,1)+rois(j,3));
+                        %                                 down_y=max(rois(i,2)+rois(i,4),rois(j,2)+rois(j,4));
+                        %                                 new_width=down_x-upper_x;
+                        %                                 new_height=down_y-upper_y;
+                        %
+                        %                                 rois(i,:)=[upper_x upper_y new_width new_height];
+                        %                                 rois(j,:)=[];
+                        %                                 continue;
+                        %                             end
+                        %                             j=j+1;
+                        %                         end
                         
-                        % first guarantee that de bbs are inside the image
+                        % first guarantee that de BBs are inside the image
                         x_before=rois(i,1);
                         y_before=rois(i,2);
                         width_before=rois(i,3);
                         height_before=rois(i,4);
                         
-                        %discard bb that are outside
+                        %discard bb that are outside the image
                         if x_before>frame_size(2) || y_before>frame_size(1)
                             rois(i,:)=[]; continue; end
                         
@@ -256,7 +261,7 @@ for c1=1:length(max_items_)
                             rois(i,:)=[];
                             continue;
                         end
-
+                        
                         i=i+1;
                     end
                     tic
@@ -286,6 +291,7 @@ for c1=1:length(max_items_)
                 % full window detector
                 if size(rois,1)<1
                     disp('full window')
+                    
                     tic
                     %preBB = detections(detections(:,1) == frame_number,:);
                     
@@ -295,7 +301,7 @@ for c1=1:length(max_items_)
                     BB = preBB(preBB(:, 5) > detThr, :);
                     detection_times=[detection_times toc];
                     if toc < 0.001
-                       disp('wtf'); 
+                        disp('wtf');
                     end
                 end
                 
@@ -446,7 +452,8 @@ for c1=1:length(max_items_)
                 tracks=updateAssignedTracks(tracks,assignments,detection_centroids,detection_bboxes, BVTHistograms,min_width,min_height);
                 tracks=updateUnassignedTracks(tracks,unassignedTracks);
                 tracks=deleteLostTracks(tracks,...
-                    invisibleForTooLong);
+                    invisibleForTooLong,...
+                    frame_size);
                 [tracks,nextId]=createNewTracks(tracks,...
                     unassignedDetections,...
                     detection_centroids,...
@@ -462,7 +469,7 @@ for c1=1:length(max_items_)
                     state_measurement_noise);
                 
                 tracking_times=[tracking_times toc];
-                                              
+                
                 %% store results
                 for i=1:length(tracks)
                     conf=1;
@@ -472,7 +479,7 @@ for c1=1:length(max_items_)
                 
                 str_disp = sprintf(' processing frame %d of %d',frame_number,n_files);
                 disp(str_disp);
-            end 
+            end
             
             %% The results must be wriiten in the MoTChallenge res/data/[datasetname.txt] for evaluation
             csvwrite('data/res/TUD-Stadtmitte.txt', results);

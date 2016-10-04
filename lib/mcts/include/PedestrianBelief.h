@@ -14,7 +14,6 @@ using namespace msa::mcts;
 using namespace std;
 namespace tracking {
 
-
 class MyKalmanFilter : public cv::KalmanFilter
 {
 public:
@@ -43,8 +42,6 @@ public:
 struct Action {
     bool attend;
 };
-
-
 
 //--------------------------------------------------------------
 //--------------------------------------------------------------
@@ -91,13 +88,11 @@ public:
 
         mean=kalman_filter.statePre.rowRange(0,3);
         covariance=kalman_filter.errorCovPost.rowRange(0,3).colRange(0,3);
-
         //std::cout << "init:" <<  kalman_filter.measurementNoiseCov << std::endl;
     }
 
     ~Belief()
     {}
-
 
     // whether or not this belief is terminal (reached end)
     bool is_terminal() {
@@ -139,7 +134,6 @@ public:
 
     }
 
-
     // return possible actions from this state
     void get_actions(std::vector<Action>& actions) const  {
         actions.resize(kNumActions);
@@ -147,13 +141,11 @@ public:
         actions[1].attend=true;
     }
 
-
     // get a random action, return false if no actions found
     bool get_random_action(Action& action) const {
         action.attend=rand()%2;
         return true;
     }
-
 
     // evaluate this state and return a vector of rewards (for each agent)
     const float evaluate() const  {
@@ -176,8 +168,6 @@ public:
         return reward;
 
     }
-
-
 
     //--------------------------------------------------------------
     // IMPLEMENTATION SPECIFIC
@@ -204,17 +194,13 @@ public:
         float q_y=min_height*q_scale*0.5;
 
         cv::Mat cov=(cv::Mat_<float>(3, 3) << q_x*q_x*0.01, 0, 0,    0, q_y*q_y*0.01, 0,    0, 0, q_scale*q_scale*uniform_const);
-        //std::cout << " cov:"<< cov << std::endl;
         kalman_filter.measurementNoiseCov=cov;
         return state;
     }
 
     float compute_observation_region_area()
     {
-        //std::cout << "alpha_c:"<< alpha_c<< " alpha_s:"<< alpha_s << std::endl;
-
         float scale=mean.at<float>(2);
-
 
         float centroid_uncertainty=sqrt(covariance.at<float>(0,0));
         float scale_uncertainty=sqrt(covariance.at<float>(2,2));

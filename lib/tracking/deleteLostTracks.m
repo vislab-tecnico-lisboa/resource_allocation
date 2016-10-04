@@ -1,19 +1,17 @@
 function tracks=deleteLostTracks(tracks,...
-    invisibleForTooLong)
+    invisibleForTooLong,...
+    frame_size)
 if isempty(tracks)
     return;
 end
 
-
-
-
 lostInds = [tracks(:).consecutiveInvisibleCount] >= invisibleForTooLong;
-
 
 % Delete lost tracks.
 tracks = tracks(~lostInds);
 
 lostInds=[];
+
 % check which tracks are outside the image and delete
 for i=1:size(tracks,2)
     x=tracks(1,i).stateKalmanFilter.State(1);
@@ -24,5 +22,39 @@ for i=1:size(tracks,2)
     end
 end
 % Delete lost tracks.
-tracks = tracks(lostInds);
+
+if size(tracks)>0
+    tracks = tracks(lostInds);
+end
+
+
+lostInds=[];
+for i=1:size(tracks,2)
+    % check wich tracks are too small
+    % discard too small bbs
+    sc = tracks(i).stateKalmanFilter.State(3);
+    center = tracks(i).stateKalmanFilter.State(1:2);
+    min_height = tracks(i).min_height;
+    min_width = tracks(i).min_width;
+    
+    width = min_width*sc;
+    height = min_height*sc;
+    
+    bbox(1) = center(1)-width/2;
+    bbox(2) = center(2)-height/2;
+    bbox(3) = width;
+    bbox(4) = height;
+    
+    real_height=min(bbox(2)+height,frame_size(1))- max(bbox(2),0) ;
+    real_width=min(bbox(1)+width,frame_size(2)) - max(bbox(1),0);
+    
+    if (real_height*real_width)<(min_height*min_width) %|| real_height<min_height || real_width<min_width
+        lostInds=[lostInds i];
+    end
+end
+
+if size(tracks)>0
+    
+    tracks = tracks(~lostInds);
+end
 end

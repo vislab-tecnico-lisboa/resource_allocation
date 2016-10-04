@@ -33,10 +33,10 @@ public:
     unsigned int simulation_depth;	// how many ticks (frames) to run simulation for
 
     //--------------------------------------------------------------
-    UCT(unsigned int max_millis_=0, unsigned int simulation_depth_=10) :
+    UCT(unsigned int max_millis_=0, unsigned int simulation_depth_=10, float uct_k_=20.0) :
         max_millis( max_millis_ ),
-        simulation_depth( simulation_depth_ ),
-        uct_k( sqrt(2) )
+        simulation_depth( simulation_depth_),
+        uct_k(uct_k_)
     {}
 
     //--------------------------------------------------------------
