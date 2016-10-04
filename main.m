@@ -79,10 +79,10 @@ state_measurement_noise=[...
 max_items_=[1];             % max regions to be process
 capacity_constraints_=[1.0]; % percentage of image to be process at each time instant
 
-max_simulation_time_millis=1000;
+max_simulation_time_millis=50;
 simulation_depth=3;
-alpha_c=0.0;
-alpha_s=0.0;
+alpha_c=0.000;
+alpha_s=0.000;
 overlap_ratio=0.7;
 
 min_width=52;
@@ -147,8 +147,20 @@ for c1=1:length(max_items_)
                         simulation_depth);
                 end
                 
-                
+                % Get action
                 [action,optimization_time,explored_actions,explored_nodes]=compute_action(tracks,optimization_,alpha_c,alpha_s);
+                
+                % Update attended tracks
+                for i=1:size(tracks,2)
+                    tracks(i).attended=0;
+                end;
+                for i=1:size(tracks,2)
+                    for j=1:size(action,2)
+                        if action(j)==i
+                            tracks(i).attended=1;
+                        end
+                    end
+                end
                 figure(1)
                 if size(explored_nodes>0)
                     subplot(1,4,1)
@@ -173,29 +185,29 @@ for c1=1:length(max_items_)
                             continue
                         end
                         
-                        %merge overlapping bbxs
-                        j=i+1;
-                        while j<=size(rois,1)
-                            if rois(j,3)<0 || rois(j,4)<0
-                                rois(j,:)=[];
-                                continue
-                            end
-                            
-                            %merge if bbs they overlap more than overlap_ration
-                            if bboxOverlapRatio(rois(i,:),rois(j,:)) >overlap_ratio
-                                upper_x=min(rois(i,1),rois(j,1));
-                                upper_y=min(rois(i,2),rois(j,2));
-                                down_x=max(rois(i,1)+rois(i,3),rois(j,1)+rois(j,3));
-                                down_y=max(rois(i,2)+rois(i,4),rois(j,2)+rois(j,4));
-                                new_width=down_x-upper_x;
-                                new_height=down_y-upper_y;
-                                
-                                rois(i,:)=[upper_x upper_y new_width new_height];
-                                rois(j,:)=[];
-                                continue;
-                            end
-                            j=j+1;
-                        end
+%                         %merge overlapping bbxs
+%                         j=i+1;
+%                         while j<=size(rois,1)
+%                             if rois(j,3)<0 || rois(j,4)<0
+%                                 rois(j,:)=[];
+%                                 continue
+%                             end
+%                             
+%                             %merge if bbs they overlap more than overlap_ration
+%                             if bboxOverlapRatio(rois(i,:),rois(j,:)) >overlap_ratio
+%                                 upper_x=min(rois(i,1),rois(j,1));
+%                                 upper_y=min(rois(i,2),rois(j,2));
+%                                 down_x=max(rois(i,1)+rois(i,3),rois(j,1)+rois(j,3));
+%                                 down_y=max(rois(i,2)+rois(i,4),rois(j,2)+rois(j,4));
+%                                 new_width=down_x-upper_x;
+%                                 new_height=down_y-upper_y;
+%                                 
+%                                 rois(i,:)=[upper_x upper_y new_width new_height];
+%                                 rois(j,:)=[];
+%                                 continue;
+%                             end
+%                             j=j+1;
+%                         end
                         
                         % first guarantee that de bbs are inside the image
                         x_before=rois(i,1);
@@ -269,7 +281,11 @@ for c1=1:length(max_items_)
                     end
                     
                     detection_times=[detection_times toc];
-                else
+                end
+                
+                % full window detector
+                if size(rois,1)<1
+                    disp('full window')
                     tic
                     %preBB = detections(detections(:,1) == frame_number,:);
                     
@@ -278,7 +294,11 @@ for c1=1:length(max_items_)
                     %Filter out detections with bad score
                     BB = preBB(preBB(:, 5) > detThr, :);
                     detection_times=[detection_times toc];
+                    if toc < 0.001
+                       disp('wtf'); 
+                    end
                 end
+                
                 if length(BB)==0
                     preBB = acfDetect(frame, detector);
                     

@@ -46,74 +46,6 @@ public:
 
 
 
-    /*void breath_first_expand(boost::shared_ptr<TreeNode> node){
-        // Create a temporary queue to hold node pointers.
-        std::queue<boost::shared_ptr<TreeNode> > queue;
-
-
-        queue.push(node);
-        std::cout << "depth:" << queue.front()->get_depth() << std::endl;
-
-        std::vector< Action > actions;
-        Belief belief(node->get_belief());
-        belief.get_actions(actions);
-        std::cout << "actions:"<< actions.size() << std::endl;
-        while (!queue.empty())
-        {
-            std::cout << "depth:" << queue.front()->get_depth() << std::endl;
-
-            node=queue.front();
-            queue.pop();
-
-            if(node->get_depth()<simulation_depth&& !node->is_terminal())
-            {
-                for(int i=0; i<actions.size();++i)
-                {
-                    // 2. EXPAND by adding all actions (if not terminal or not fully expanded)
-                    queue.push(node->expand(actions[i]));
-                }
-            }
-        }
-
-    }*/
-
-
-
-
-    /*void depth_first_expand(TreeNode* node){
-        if(node->get_depth()>=simulation_depth)
-            return;
-        std::vector< Action > actions;
-        Belief belief(node->get_belief());
-        belief.get_actions(actions);
-
-        for(int i=0; i<actions.size();++i)
-        {
-            // 2. EXPAND by adding all actions (if not terminal or not fully expanded)
-            //if(!node->is_fully_expanded() && !node->is_terminal())
-            if(!node->is_terminal())
-                depth_first_expand(node->expand(actions[i]));
-        }
-    }*/
-    /*void greedy_depth_first(boost::shared_ptr<TreeNode> node){
-        if(node->get_depth()>=simulation_depth)
-            return;
-        //std::cout << " action: " << node->get_action() << std::endl;
-
-        // 1. EXPAND by adding a single child (if not terminal or not fully expanded)
-        if(!node->is_fully_expanded() && !node->is_terminal()) greedy_depth_first(node->expand());
-        // get reward
-        float reward = node->get_belief().evaluate();
-
-
-        // 2. BACK PROPAGATE REWARD
-        while(node) {
-            node->update(reward);
-            node = node->get_parent();
-        }
-
-        return;
-    }*/
 
     //--------------------------------------------------------------
     // get best (immediate) child for given TreeNode based on uct score
@@ -277,6 +209,76 @@ public:
 
         return best_action;
     }
+
+    /*void breath_first_expand(boost::shared_ptr<TreeNode> node){
+        // Create a temporary queue to hold node pointers.
+        std::queue<boost::shared_ptr<TreeNode> > queue;
+
+
+        queue.push(node);
+        std::cout << "depth:" << queue.front()->get_depth() << std::endl;
+
+        std::vector< Action > actions;
+        Belief belief(node->get_belief());
+        belief.get_actions(actions);
+        std::cout << "actions:"<< actions.size() << std::endl;
+        while (!queue.empty())
+        {
+            std::cout << "depth:" << queue.front()->get_depth() << std::endl;
+
+            node=queue.front();
+            queue.pop();
+
+            if(node->get_depth()<simulation_depth&& !node->is_terminal())
+            {
+                for(int i=0; i<actions.size();++i)
+                {
+                    // 2. EXPAND by adding all actions (if not terminal or not fully expanded)
+                    queue.push(node->expand(actions[i]));
+                }
+            }
+        }
+
+    }*/
+
+
+
+
+    /*void depth_first_expand(TreeNode* node){
+        if(node->get_depth()>=simulation_depth)
+            return;
+        std::vector< Action > actions;
+        Belief belief(node->get_belief());
+        belief.get_actions(actions);
+
+        for(int i=0; i<actions.size();++i)
+        {
+            // 2. EXPAND by adding all actions (if not terminal or not fully expanded)
+            //if(!node->is_fully_expanded() && !node->is_terminal())
+            if(!node->is_terminal())
+                depth_first_expand(node->expand(actions[i]));
+        }
+    }*/
+    /*void greedy_depth_first(boost::shared_ptr<TreeNode> node){
+        if(node->get_depth()>=simulation_depth)
+            return;
+        //std::cout << " action: " << node->get_action() << std::endl;
+
+        // 1. EXPAND by adding a single child (if not terminal or not fully expanded)
+        if(!node->is_fully_expanded() && !node->is_terminal()) greedy_depth_first(node->expand());
+        // get reward
+        float reward = node->get_belief().evaluate();
+
+
+        // 2. BACK PROPAGATE REWARD
+        while(node) {
+            node->update(reward);
+            node = node->get_parent();
+        }
+
+        return;
+    }*/
+
 
 
 };

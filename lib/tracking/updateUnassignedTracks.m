@@ -9,7 +9,10 @@ for i = 1:length(unassignedTracks)
     end
     
     tracks(trackPosition).age = tracks(trackPosition).age + 1;
-    tracks(trackPosition).consecutiveInvisibleCount = ...
-        tracks(trackPosition).consecutiveInvisibleCount + 1;
+    
+    if tracks(trackPosition).attended==1
+        tracks(trackPosition).consecutiveInvisibleCount = ...
+            tracks(trackPosition).consecutiveInvisibleCount + 1;
+    end
 end
 end

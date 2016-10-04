@@ -61,7 +61,9 @@ public:
         covariance(other.covariance),
         id(other.id),
         alpha_c(other.alpha_c),
-        alpha_s(other.alpha_s)
+        alpha_s(other.alpha_s),
+        min_width(other.min_width),
+        min_height(other.min_height)
     {}
 
     Belief(const float & alpha_c_,
@@ -113,10 +115,17 @@ public:
         //std::cout << "     id: "<< id << " action: "<< action.attend<<  std::endl;
         if(action.attend)
         {
+            //std::cout << "  scale before obs:"<< mean.at<float>(2) << std::endl;
+
             //Observe
             //std::cout << "before:" <<covariance<<std::endl;
-            mean = kalman_filter.correct(get_measurement(mean.rowRange(0,3)+10.0));
+            get_measurement(mean.rowRange(0,3));
+            mean=kalman_filter.correct(mean.rowRange(0,3));
+
             covariance = kalman_filter.errorCovPost.rowRange(0,3).colRange(0,3);
+
+            //std::cout << "  scale after obs:"<< mean.at<float>(2) << std::endl;
+
             //std::cout << "after:" <<covariance<<std::endl;
             //std::cout << "measurementNoiseCov:" << kalman_filter.measurementNoiseCov<<std::endl;
         }
@@ -125,6 +134,9 @@ public:
 
         mean = kalman_filter.predict();
         covariance = kalman_filter.errorCovPre.rowRange(0,3).colRange(0,3);
+
+        //std::cout << "  scale predict:"<< mean.at<float>(2) << std::endl;
+
     }
 
 
@@ -191,7 +203,8 @@ public:
         float q_x=min_width*q_scale*0.5;
         float q_y=min_height*q_scale*0.5;
 
-        cv::Mat cov=(cv::Mat_<float>(3, 3) << q_x*q_x*uniform_const, 0, 0,    0, q_y*q_y*uniform_const, 0,    0, 0, q_scale*q_scale*uniform_const);
+        cv::Mat cov=(cv::Mat_<float>(3, 3) << q_x*q_x*0.01, 0, 0,    0, q_y*q_y*0.01, 0,    0, 0, q_scale*q_scale*uniform_const);
+        //std::cout << " cov:"<< cov << std::endl;
         kalman_filter.measurementNoiseCov=cov;
         return state;
     }
@@ -201,6 +214,8 @@ public:
         //std::cout << "alpha_c:"<< alpha_c<< " alpha_s:"<< alpha_s << std::endl;
 
         float scale=mean.at<float>(2);
+
+
         float centroid_uncertainty=sqrt(covariance.at<float>(0,0));
         float scale_uncertainty=sqrt(covariance.at<float>(2,2));
         float total_scale=(scale+alpha_c*centroid_uncertainty+alpha_s*scale_uncertainty);
