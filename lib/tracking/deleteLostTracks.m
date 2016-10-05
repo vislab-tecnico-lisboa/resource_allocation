@@ -7,24 +7,29 @@ end
 
 lostInds = [tracks(:).consecutiveInvisibleCount] >= invisibleForTooLong;
 
+
+
 % Delete lost tracks.
-tracks = tracks(~lostInds);
-
+if ~isempty(lostInds)
+    tracks = tracks(~lostInds);
+end
 lostInds=[];
-
 % check which tracks are outside the image and delete
 for i=1:size(tracks,2)
     x=tracks(1,i).stateKalmanFilter.State(1);
     y=tracks(1,i).stateKalmanFilter.State(2);
     s=tracks(1,i).stateKalmanFilter.State(3);
-    if x >0 && y>0 && s>0
-        lostInds=[lostInds i];
+    if x<0 || y<0 || s<0
+        lostInds=[lostInds 1];
+    else
+        lostInds=[lostInds 0];
     end
 end
 % Delete lost tracks.
 
-if size(tracks)>0
-    tracks = tracks(lostInds);
+
+if ~isempty(tracks) && ~isempty(lostInds)
+    tracks = tracks(~lostInds);
 end
 
 
@@ -49,12 +54,15 @@ for i=1:size(tracks,2)
     real_width=min(bbox(1)+width,frame_size(2)) - max(bbox(1),0);
     
     if (real_height*real_width)<(min_height*min_width) %|| real_height<min_height || real_width<min_width
-        lostInds=[lostInds i];
+        lostInds=[lostInds 1];
+    else
+        lostInds=[lostInds 0];
     end
 end
 
-if size(tracks)>0
-    
+
+
+if ~isempty(tracks) && ~isempty(lostInds)
     tracks = tracks(~lostInds);
 end
 end

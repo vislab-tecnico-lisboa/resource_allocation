@@ -76,13 +76,13 @@ state_measurement_noise=[...
 %state_measurement_noise = state_measurement_noise;
 
 %% optimization parameters
-max_items_=[1];             % max regions to be process
-capacity_constraints_=[1.0]; % percentage of image to be process at each time instant
+max_items_=[4 3 2 1];             % max regions to be process
+capacity_constraints_=[1.0 0.75 0.5 0.25]; % percentage of image to be process at each time instant
 
 max_simulation_time_millis=50;
 simulation_depth=3;
-alpha_c=0.000;
-alpha_s=0.000;
+alpha_c=0.1;
+alpha_s=0.1;
 overlap_ratio=0.7;
 
 min_width=52;
@@ -125,7 +125,7 @@ for c1=1:length(max_items_)
                 frame = imread([image_dir image_files(frame_number).name]);
                 
                 %% dynamic resource allocation (POMDP - input current belief; output actions)
-                if size(tracks)>0
+                if size(tracks,2)>0
                     
                     if max_items<size(tracks,2)
                         optimization_=initializeMCTS(...
@@ -180,9 +180,10 @@ for c1=1:length(max_items_)
                     BB=[];
                 else
                     rois=[];
+                    action=0;
                 end
                 %merge overlapping rois
-                if size(rois)>0
+                if size(rois,1)>0
                     i=1;
                     while i<=size(rois,1)
                         if rois(i,3)<0 || rois(i,4)<0
@@ -289,7 +290,7 @@ for c1=1:length(max_items_)
                 end
                 
                 % full window detector
-                if size(rois,1)<1
+                if size(tracks,2)<1
                     disp('full window')
                     
                     tic
@@ -318,75 +319,75 @@ for c1=1:length(max_items_)
                 
                 
                 
-                %% display results
-                %displayTrackingResults(obj,frame,tracks,detection_bboxes,rois);
-                
-                % attending regions
-                subplot(1,4,2)
-                imshow(frame,'InitialMagnification','fit');
-                hold on;
-                set(gca,'Position',[0.25 0 0.25 1])
-                
-                for i=1:size(rois,1)
-                    rectangle('Position',...
-                        rois(i,:),...
-                        'EdgeColor',...
-                        [0 0 1],...
-                        'LineWidth',...
-                        3);
-                    %text(detection_bboxes(i, 1), detection_bboxes(i, 2), ['id=' int2str(detection_bboxes(i, 5))], 'FontSize', 20);
-                end
-                drawnow
-                hold off
-                
-                % detections
-                subplot(1,4,3)
-                imshow(frame,'InitialMagnification','fit');
-                hold on;
-                set(gca,'Position',[0.5 0 0.25 1]);
-                for i=1:size(detection_bboxes,1)
-                    rectangle('Position',...
-                        detection_bboxes(i,1:4),...
-                        'EdgeColor',...
-                        'r',...
-                        'LineWidth',...
-                        3);
-                    %text(detection_bboxes(i, 1), detection_bboxes(i, 2), ['id=' int2str(detection_bboxes(i, 5))], 'FontSize', 20);
-                end
-                drawnow
-                hold off
-                
-                % tracks
-                subplot(1,4,4)
-                imshow(frame,'InitialMagnification','fit');
-                hold on;
-                set(gca,'Position',[0.75 0 0.25 1])
-                uncertainties=zeros(size(tracks,2),1);
-                for i=1:size(tracks,2)
-                    uncertainties(i)=det(tracks(i).stateKalmanFilter.StateCovariance(1:3,1:3));
-                end
-                uncertainties=uncertainties/sum(uncertainties);
-                for i=1:size(tracks,2)
-                    sc = tracks(i).stateKalmanFilter.State(3);
-                    center = tracks(i).stateKalmanFilter.State(1:2);
-                    
-                    width = min_width*sc;
-                    height = min_height*sc;
-                    
-                    rectangle('Position', [...
-                        center(1)-width/2,...
-                        center(2)-height/2,...
-                        width,...
-                        height],...
-                        'EdgeColor',uncertainties(i)*[0 1 0], 'LineWidth', 3);
-                    text(...
-                        center(1)-width/2,...
-                        center(2)-height/2-20,...
-                        ['unc=' num2str(uncertainties(i))],...
-                        'FontSize', 10, 'Color', [1 1 1]);
-                end
-                drawnow
-                hold off
+%                 %% display results
+%                 %displayTrackingResults(obj,frame,tracks,detection_bboxes,rois);
+%                 
+%                 % attending regions
+%                 subplot(1,4,2)
+%                 imshow(frame,'InitialMagnification','fit');
+%                 hold on;
+%                 set(gca,'Position',[0.25 0 0.25 1])
+%                 
+%                 for i=1:size(rois,1)
+%                     rectangle('Position',...
+%                         rois(i,:),...
+%                         'EdgeColor',...
+%                         [0 0 1],...
+%                         'LineWidth',...
+%                         3);
+%                     %text(detection_bboxes(i, 1), detection_bboxes(i, 2), ['id=' int2str(detection_bboxes(i, 5))], 'FontSize', 20);
+%                 end
+%                 drawnow
+%                 hold off
+%                 
+%                 % detections
+%                 subplot(1,4,3)
+%                 imshow(frame,'InitialMagnification','fit');
+%                 hold on;
+%                 set(gca,'Position',[0.5 0 0.25 1]);
+%                 for i=1:size(detection_bboxes,1)
+%                     rectangle('Position',...
+%                         detection_bboxes(i,1:4),...
+%                         'EdgeColor',...
+%                         'r',...
+%                         'LineWidth',...
+%                         3);
+%                     %text(detection_bboxes(i, 1), detection_bboxes(i, 2), ['id=' int2str(detection_bboxes(i, 5))], 'FontSize', 20);
+%                 end
+%                 drawnow
+%                 hold off
+%                 
+%                 % tracks
+%                 subplot(1,4,4)
+%                 imshow(frame,'InitialMagnification','fit');
+%                 hold on;
+%                 set(gca,'Position',[0.75 0 0.25 1])
+%                 uncertainties=zeros(size(tracks,2),1);
+%                 for i=1:size(tracks,2)
+%                     uncertainties(i)=det(tracks(i).stateKalmanFilter.StateCovariance(1:3,1:3));
+%                 end
+%                 uncertainties=uncertainties/sum(uncertainties);
+%                 for i=1:size(tracks,2)
+%                     sc = tracks(i).stateKalmanFilter.State(3);
+%                     center = tracks(i).stateKalmanFilter.State(1:2);
+%                     
+%                     width = min_width*sc;
+%                     height = min_height*sc;
+%                     
+%                     rectangle('Position', [...
+%                         center(1)-width/2,...
+%                         center(2)-height/2,...
+%                         width,...
+%                         height],...
+%                         'EdgeColor',uncertainties(i)*[0 1 0], 'LineWidth', 3);
+%                     text(...
+%                         center(1)-width/2,...
+%                         center(2)-height/2-20,...
+%                         ['unc=' num2str(uncertainties(i))],...
+%                         'FontSize', 10, 'Color', [1 1 1]);
+%                 end
+%                 drawnow
+%                 hold off
                 
                 %% Extract Dario's color features
                 tic
