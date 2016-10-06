@@ -12,8 +12,8 @@ for i=1:length(action)
     state_covariances{i}=tracks(action(i)+1).stateKalmanFilter.StateCovariance;
     center_x=state_means(i,1);
     center_y=state_means(i,2);
-    width=state_means(i,3)*min_width + alpha_c*sqrt(tracks(i).stateKalmanFilter.StateCovariance(1,1)) + alpha_s*sqrt(tracks(i).stateKalmanFilter.StateCovariance(3,3));
-    height=state_means(i,3)*min_height + alpha_c*sqrt(tracks(i).stateKalmanFilter.StateCovariance(1,1)) + alpha_s*sqrt(tracks(i).stateKalmanFilter.StateCovariance(3,3));
+    width= (state_means(i,3) + alpha_s*sqrt(tracks(i).stateKalmanFilter.StateCovariance(3,3)))*min_width  + alpha_c*sqrt(tracks(i).stateKalmanFilter.StateCovariance(1,1));
+    height=(state_means(i,3) + alpha_s*sqrt(tracks(i).stateKalmanFilter.StateCovariance(3,3)))*min_height + alpha_c*sqrt(tracks(i).stateKalmanFilter.StateCovariance(2,2));
     up_x=center_x-width*0.5;
     up_y=center_y-height*0.5;
         

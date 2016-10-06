@@ -22,7 +22,8 @@ image_dir = 'data/train/TUD-Stadtmitte/img1/';
 % Load the image files. Each image, a frame
 image_files = dir([image_dir '*.jpg']);
 n_files = length(image_files);
-
+%% TWEEK
+n_files=30;
 % Load the provided detections from a dataset.
 %detections = csvread('data/train/MOT16-02/det/det.txt');
 %detections = csvread('data/train/MOT16-02/gt/gt.txt');
@@ -31,10 +32,10 @@ n_files = length(image_files);
 %% tracking parameters
 
 %create/destroy parameters
-invisibleForTooLong = 5;
+invisibleForTooLong = 10;
 
 %Dummy value while
-detThr = 30;
+detThr = 50;
 
 %transition/observation parameters
 state_transition_model=...
@@ -51,9 +52,9 @@ state_measurement_model=...
     0 0 1 0 0 0];
 
 state_init_state_covariance=[...
-    10 0 0 10 0 0;...
-    0 10 0 0 10 0;...
-    0 0  2 0  0 2;...
+    10 0 0 0 0 0;...
+    0 10 0 0 0 0;...
+    0 0  2 0  0 0;...
     0 0  0 10 0 0;...
     0 0  0 0 10 0;...
     0 0  0 0 0 10];
@@ -77,13 +78,13 @@ state_measurement_noise=[...
 
 %% optimization parameters
 max_items_=[4 3 2 1];             % max regions to be process
-capacity_constraints_=[1.0 0.75 0.5 0.25]; % percentage of image to be process at each time instant
+capacity_constraints_=[1.0 0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1]; % percentage of image to be process at each time instant
 
 max_simulation_time_millis=50;
-simulation_depth=3;
-alpha_c=0.1;
-alpha_s=0.1;
-overlap_ratio=0.7;
+simulation_depth=1;
+alpha_c=1.0;
+alpha_s=1.0;
+overlap_ratio=0.5;
 
 min_width=52;
 min_height=128;
@@ -93,11 +94,10 @@ frame_size = size(imread([image_dir image_files(1).name]));
 %% Initialize pedestrian detector
 %detector=initializeDetector();
 %% Initialize trackers
-tracks = initializeTracks(min_width,min_height); % Create an empty array of tracks.
 nextId = 1; % ID of the next track
 
 %% Detect moving objects, and track them across video frames.
-num_exp=10;
+num_exp=30;
 average_detection_times=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
 average_optimization_times=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
 average_tracking_times=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
@@ -115,7 +115,10 @@ for c1=1:length(max_items_)
             optimization_times=[];
             tracking_times=[];
             results=[];
+            tracks = initializeTracks(min_width,min_height); % Create an empty array of tracks.
+
             for frame_number=1:n_files
+
                 iteration_=iteration_+1;
                 
                 str_disp = sprintf('processing iteration %d of %d (%f)',iteration_,total_iterations, (iteration_/total_iterations) * 100.0);
@@ -164,14 +167,12 @@ for c1=1:length(max_items_)
                             end
                         end
                     end
-                    figure(1)
-                    if size(explored_nodes>0)
-                        subplot(1,4,1)
-                        hold on
-                        set(gca,'Position',[0 0 0.25 1])
-                        treeplot(explored_nodes);
-                        hold off
-                    end
+%                     figure(1)
+%                     if size(explored_nodes>0)
+%                         set(gca,'Position',[0 0 0.25 1])
+%                         treeplot(explored_nodes);
+%                     end
+%                     drawnow
                     
                     optimization_times=[optimization_times optimization_time];
                     rois=compute_rois(tracks,action,min_width,min_height,alpha_c,alpha_s);
@@ -191,29 +192,29 @@ for c1=1:length(max_items_)
                             continue
                         end
                         
-                        %                         %merge overlapping bbxs
-                        %                         j=i+1;
-                        %                         while j<=size(rois,1)
-                        %                             if rois(j,3)<0 || rois(j,4)<0
-                        %                                 rois(j,:)=[];
-                        %                                 continue
-                        %                             end
-                        %
-                        %                             %merge if bbs they overlap more than overlap_ration
-                        %                             if bboxOverlapRatio(rois(i,:),rois(j,:)) >overlap_ratio
-                        %                                 upper_x=min(rois(i,1),rois(j,1));
-                        %                                 upper_y=min(rois(i,2),rois(j,2));
-                        %                                 down_x=max(rois(i,1)+rois(i,3),rois(j,1)+rois(j,3));
-                        %                                 down_y=max(rois(i,2)+rois(i,4),rois(j,2)+rois(j,4));
-                        %                                 new_width=down_x-upper_x;
-                        %                                 new_height=down_y-upper_y;
-                        %
-                        %                                 rois(i,:)=[upper_x upper_y new_width new_height];
-                        %                                 rois(j,:)=[];
-                        %                                 continue;
-                        %                             end
-                        %                             j=j+1;
-                        %                         end
+                        %merge overlapping bbxs
+                        j=i+1;
+                        while j<=size(rois,1)
+                            if rois(j,3)<0 || rois(j,4)<0
+                                rois(j,:)=[];
+                                continue
+                            end
+                            
+                            %merge if bbs they overlap more than overlap_ration
+                            if bboxOverlapRatio(rois(i,:),rois(j,:))>overlap_ratio
+                                upper_x=min(rois(i,1),rois(j,1));
+                                upper_y=min(rois(i,2),rois(j,2));
+                                down_x=max(rois(i,1)+rois(i,3),rois(j,1)+rois(j,3));
+                                down_y=max(rois(i,2)+rois(i,4),rois(j,2)+rois(j,4));
+                                new_width=down_x-upper_x;
+                                new_height=down_y-upper_y;
+                                
+                                rois(i,:)=[upper_x upper_y new_width new_height];
+                                rois(j,:)=[];
+                                continue;
+                            end
+                            j=j+1;
+                        end
                         
                         % first guarantee that de BBs are inside the image
                         x_before=rois(i,1);
@@ -265,28 +266,33 @@ for c1=1:length(max_items_)
                         
                         i=i+1;
                     end
-                    tic
+                    
+                    time_=0;
                     for i=1:size(rois,1)
                         image_bounding_box=imcrop(frame,rois(i,:));
-                        
+                        tic
                         preBB = acfDetect(image_bounding_box, detector);
-                        
+                        time_=time_+toc;
+
                         %Filter out detections with bad score
-                        BB = [BB; preBB(preBB(:, 5) > detThr, :)];
+                        preBB = preBB(preBB(:, 5) > detThr, :);
+                        
+                        %convert back to image coordinates
                         if rois(i,1)<0
-                            BB(:,1) = BB(:,1);
+                            preBB(:,1) = preBB(:,1);
                         else
-                            BB(:,1) = BB(:,1) + rois(i,1);
+                            preBB(:,1) = preBB(:,1) + rois(i,1);
                         end
                         
                         if rois(i,2)<0
-                            BB(:,2) = BB(:,2);
+                            preBB(:,2) = preBB(:,2);
                         else
-                            BB(:,2) = BB(:,2) + rois(i,2);
+                            preBB(:,2) = preBB(:,2) + rois(i,2);
                         end
+                        
+                        BB=[BB; preBB];
                     end
-                    
-                    detection_times=[detection_times toc];
+                    detection_times=[detection_times time_];
                 end
                 
                 % full window detector
@@ -301,25 +307,27 @@ for c1=1:length(max_items_)
                     %Filter out detections with bad score
                     BB = preBB(preBB(:, 5) > detThr, :);
                     detection_times=[detection_times toc];
-                    if toc < 0.001
-                        disp('wtf');
-                    end
+                    
                 end
                 
                 if length(BB)==0
+                    disp('full window')
+                    tic
                     preBB = acfDetect(frame, detector);
                     
                     %Filter out detections with bad score
                     BB = preBB(preBB(:, 5) > detThr, :);
+                    detection_times=[detection_times toc];
+                    
                 end
-                detection_bboxes=[BB(:,1) BB(:,2) BB(:,3) BB(:,4)];
+                detection_bboxes=BB;
                 detection_centroids=[BB(:,1)+BB(:,3)*0.5 BB(:,2)+BB(:,4)*0.5];
                 
                 
                 
                 
                 
-%                 %% display results
+                %% display results
 %                 %displayTrackingResults(obj,frame,tracks,detection_bboxes,rois);
 %                 
 %                 % attending regions
@@ -351,11 +359,11 @@ for c1=1:length(max_items_)
 %                         'EdgeColor',...
 %                         'r',...
 %                         'LineWidth',...
-%                         3);
+%                         1);
 %                     %text(detection_bboxes(i, 1), detection_bboxes(i, 2), ['id=' int2str(detection_bboxes(i, 5))], 'FontSize', 20);
 %                 end
 %                 drawnow
-%                 hold off
+%                     hold off
 %                 
 %                 % tracks
 %                 subplot(1,4,4)

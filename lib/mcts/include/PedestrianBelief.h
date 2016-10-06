@@ -29,7 +29,6 @@ public:
         errorCovPre=other.errorCovPre.clone();        //!< priori error estimate covariance matrix (P'(k)): P'(k)=A*P(k-1)*At + Q)*/
         gain=other.gain.clone();               //!< Kalman gain matrix (K(k)): K(k)=P'(k)*Ht*inv(H*P'(k)*Ht+R)
         errorCovPost=other.errorCovPost.clone();       //!< posteriori error estimate covariance matrix (P(k)): P(k)=(I-K(k)*H)*P'(k)
-
         // do something with bar
     }
 
@@ -114,6 +113,7 @@ public:
 
             //Observe
             //std::cout << "before:" <<covariance<<std::endl;
+
             get_measurement(mean.rowRange(0,3));
             mean=kalman_filter.correct(mean.rowRange(0,3));
 
@@ -202,11 +202,13 @@ public:
     {
         float scale=mean.at<float>(2);
 
-        float centroid_uncertainty=sqrt(covariance.at<float>(0,0));
+        float x_centroid_uncertainty=sqrt(covariance.at<float>(0,0));
+        float y_centroid_uncertainty=sqrt(covariance.at<float>(1,1));
         float scale_uncertainty=sqrt(covariance.at<float>(2,2));
-        float total_scale=(scale+alpha_c*centroid_uncertainty+alpha_s*scale_uncertainty);
-        int n_rows=total_scale * min_height;
-        int n_cols=total_scale * min_width;
+        //std::cout << "scale_uncertainty: "<< scale_uncertainty <<" "<< x_centroid_uncertainty <<" "<<y_centroid_uncertainty << std::endl;
+        float total_scale=(scale+alpha_s*scale_uncertainty);
+        int n_rows=(total_scale * min_height) + alpha_c*x_centroid_uncertainty;
+        int n_cols=(total_scale * min_width) + alpha_c*y_centroid_uncertainty;
         //std::cout << "scale:"<<scale<<"  centroid_uncertainty:"<< centroid_uncertainty << " scale_uncertainty:"<< scale_uncertainty << " total scle:" <<total_scale<< std::endl;
         float area=n_rows*n_cols;
 

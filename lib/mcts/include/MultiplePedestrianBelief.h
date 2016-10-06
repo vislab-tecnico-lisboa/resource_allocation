@@ -82,25 +82,32 @@ public:
         max_area((float)total_area*max_area_ratio),
         count(0)
     {
-
         /*std::cout << "max_atend:" << max_attend << std::endl;
         std::cout << "total_area:" << total_area << std::endl;
         std::cout << "max_area_ratio:" << max_area_ratio_ << std::endl;
         std::cout << "max_area:" << max_area << std::endl;
         std::cout << "trackers:"<< beliefs_.size() << std::endl;*/
-
         // Compute all possible actions vector
-        unsigned int possible_actions=choose(beliefs.size(),max_attend_);
-        //std::cout << "possible actions: " << possible_actions << std::endl;
-        //actions.reserve(possible_actions);
-        for(int i=0; i<possible_actions;++i)
+        for(int i=1; i<=max_attend;++i)
         {
-            int id=i+1;
-            actions.push_back(MultipleAction(max_attend,id));
+            unsigned int possible_actions=choose(beliefs.size(),i);
+            //actions.reserve(possible_actions);
+            for(int a=0; a<possible_actions;++a)
+            {
+                int id=(i-1)*max_attend+(a+1);
+
+                actions.push_back(MultipleAction(i,id));
+            }
         }
 
+        for(int i=1; i<=max_attend;++i)
+        {
+            create_actions(0, i);
+        }
+
+
         // Create combinations
-        create_actions(0, max_attend_);
+
 
         /*for(int i=0; i< actions.size(); ++i)
         {
@@ -126,20 +133,53 @@ public:
 
 
     // whether or not this belief is terminal (reached end)
-    bool is_terminal() {
+    bool is_terminal(const MultipleAction & action) {
 
         float area=0;
 
-        for(int i=0; i<beliefs.size();++i)
+        for(int a=0; a<action.attend.size();++a)
         {
-            area+=beliefs[i].compute_observation_region_area();
-            if(area>max_area)
+            area+=beliefs[action.attend[a]].compute_observation_region_area();
+
+        }
+
+        // if the action area sum is less then the allowed, the node is not terminal
+        if(area<=max_area)
+        {
+            /*if (action.attend.size()>0)
+                std::cout << "   "<< action << std::endl;
+            else
+                std::cout << "ola"<< std::endl;*/
+            return false;
+        }
+
+
+        return true;
+    }
+
+
+    bool is_terminal() {
+
+
+        for(int i=0; i<actions.size();++i)
+        {
+            float area=0;
+
+            for(int a=0; a<actions[i].attend.size();++a)
             {
-                return true;
+                area+=beliefs[actions[i].attend[a]].compute_observation_region_area();
+
+            }
+
+            // if the action area sum is less then the allowed, the node is not terminal
+            if(area<=max_area)
+            {
+                //std::cout << "   "<< actions[i] << std::endl;
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 
     // apply action to belief
@@ -237,6 +277,7 @@ public:
             for (int i = 0; i < combination.size(); ++i) {
                 actions[count].attend[i]=combination[i];
             }
+
             ++count;
             return;
         }

@@ -33,11 +33,14 @@ public:
     unsigned int simulation_depth;	// how many ticks (frames) to run simulation for
 
     //--------------------------------------------------------------
-    UCT(unsigned int max_millis_=0, unsigned int simulation_depth_=10, float uct_k_=20.0) :
+    UCT(unsigned int max_millis_=0, unsigned int simulation_depth_=10, float uct_k_=10) :
         max_millis( max_millis_ ),
         simulation_depth( simulation_depth_),
         uct_k(uct_k_)
-    {}
+    {
+        std::cout << uct_k << std::endl;
+
+    }
 
     //--------------------------------------------------------------
     const LoopTimer & get_timer() const {
@@ -86,15 +89,14 @@ public:
         for(int i = 0; i < num_children; i++) {
 
             TreeNode* child = node->get_child(i);
+            if(!child->is_terminal() && child->get_num_visits() > most_visits) {
 
-            if(child->get_num_visits() > most_visits) {
-
+                //std::cout << child->get_action() << std::endl;
                 most_visits = child->get_num_visits();
 
                 best_node = child;
             }
         }
-
 
 
         return best_node;
@@ -150,10 +152,12 @@ public:
             }
 
             // 3. SIMULATE (if not terminal)
+            //std::cout << "SIMULATING"<< std::endl;
             // Copy the belief
             Belief belief(node->get_belief());
             //std::cout << "Simulate"<< std::endl;
             // HA AQUI BUG!!! (AS ACÇOES MUDAM LA DENTRO; DEVIA SER UMA HARD COPY)
+
             if(!node->is_terminal())
             {
                 Action action;
@@ -175,7 +179,6 @@ public:
             // get reward for leaf node
             float reward = belief.evaluate();
 
-
             // 4. BACK PROPAGATION
             int i=0;
             while(node) {
@@ -183,8 +186,10 @@ public:
                 node = node->get_parent();
             }
 
-            // find most visited child
-            best_node = get_most_visited_child(root_node);
+            TreeNode* most_visited=get_most_visited_child(root_node);
+            // find most visited child that is not terminal
+            if(most_visited)
+                    best_node = most_visited;
 
             // indicate end of loop for timer
             timer.loop_end();
@@ -203,8 +208,11 @@ public:
         Action best_action;
         // return best node's action
         if(best_node)
+        {
             best_action=best_node->get_action();
-
+        }
+        else
+            std::cout << "FODA-SE" << std::endl;
         delete root_node;
 
         return best_action;
