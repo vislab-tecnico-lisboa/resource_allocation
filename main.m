@@ -306,10 +306,10 @@ for c1=1:length(max_items_)
                     
                     %Filter out detections with bad score
                     BB = preBB(preBB(:, 5) > detThr, :);
-                    detection_times=[detection_times toc];
+                    detection_times=[detection_times nan];
                     
                 end
-                
+                % full window detector
                 if length(BB)==0
                     disp('full window')
                     tic
@@ -317,7 +317,7 @@ for c1=1:length(max_items_)
                     
                     %Filter out detections with bad score
                     BB = preBB(preBB(:, 5) > detThr, :);
-                    detection_times=[detection_times toc];
+                    detection_times=[detection_times nan];
                     
                 end
                 detection_bboxes=BB;
@@ -502,7 +502,7 @@ for c1=1:length(max_items_)
             %MOTA = allMets.bmark2d(12);
             average_mot(c1,c2,exp,:)=allMets.bmark2d;
             average_optimization_times(c1,c2,exp,:)=mean(optimization_times);
-            average_detection_times(c1,c2,exp,:)=mean(detection_times);
+            average_detection_times(c1,c2,exp,:)=nanmean(detection_times);
             average_tracking_times(c1,c2,exp,:)=mean(tracking_times);
         end
         %end runs
