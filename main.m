@@ -22,6 +22,7 @@ image_dir = 'data/train/TUD-Stadtmitte/img1/';
 % Load the image files. Each image, a frame
 image_files = dir([image_dir '*.jpg']);
 n_files = length(image_files);
+
 %% TWEEK
 n_files=30;
 % Load the provided detections from a dataset.
@@ -32,7 +33,7 @@ n_files=30;
 %% tracking parameters
 
 %create/destroy parameters
-invisibleForTooLong = 10;
+invisibleForTooLong = 30;
 
 %Dummy value while
 detThr = 50;
@@ -54,10 +55,10 @@ state_measurement_model=...
 state_init_state_covariance=[...
     10 0 0 0 0 0;...
     0 10 0 0 0 0;...
-    0 0  2 0  0 0;...
+    0 0  1.0 0  0 0;...
     0 0  0 10 0 0;...
     0 0  0 0 10 0;...
-    0 0  0 0 0 10];
+    0 0  0 0 0 1.0];
 
 state_process_noise=[...
     10.0 0 0 0 0 0;...
@@ -82,8 +83,8 @@ capacity_constraints_=[1.0 0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1]; % percentage of
 
 max_simulation_time_millis=50;
 simulation_depth=1;
-alpha_c=1.0;
-alpha_s=1.0;
+alpha_c=0.5;
+alpha_s=0.5;
 overlap_ratio=0.5;
 
 min_width=52;
@@ -97,7 +98,7 @@ frame_size = size(imread([image_dir image_files(1).name]));
 nextId = 1; % ID of the next track
 
 %% Detect moving objects, and track them across video frames.
-num_exp=30;
+num_exp=100;
 average_detection_times=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
 average_optimization_times=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
 average_tracking_times=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
@@ -105,7 +106,7 @@ average_mot=zeros(length(max_items_),length(capacity_constraints_),num_exp,14);
 iteration_=0;
 total_iterations=length(max_items_)*length(capacity_constraints_)*num_exp*n_files;
 
-figure(1)
+%figure(1)
 for c1=1:length(max_items_)
     max_items=max_items_(c1);
     for c2=1:length(capacity_constraints_)
@@ -116,9 +117,9 @@ for c1=1:length(max_items_)
             tracking_times=[];
             results=[];
             tracks = initializeTracks(min_width,min_height); % Create an empty array of tracks.
-
+            
             for frame_number=1:n_files
-
+                rois=[];
                 iteration_=iteration_+1;
                 
                 str_disp = sprintf('processing iteration %d of %d (%f)',iteration_,total_iterations, (iteration_/total_iterations) * 100.0);
@@ -129,6 +130,10 @@ for c1=1:length(max_items_)
                 
                 %% dynamic resource allocation (POMDP - input current belief; output actions)
                 if size(tracks,2)>0
+                    
+                    %predict
+                    tracks=predict(tracks);
+                    
                     
                     if max_items<size(tracks,2)
                         optimization_=initializeMCTS(...
@@ -156,6 +161,8 @@ for c1=1:length(max_items_)
                     
                     [action,optimization_time,explored_actions,explored_nodes]=compute_action(tracks,optimization_,alpha_c,alpha_s);
                     
+                    
+                    
                     % Update attended tracks
                     for i=1:size(tracks,2)
                         tracks(i).attended=0;
@@ -167,24 +174,14 @@ for c1=1:length(max_items_)
                             end
                         end
                     end
-%                     figure(1)
-%                     if size(explored_nodes>0)
-%                         set(gca,'Position',[0 0 0.25 1])
-%                         treeplot(explored_nodes);
-%                     end
-%                     drawnow
                     
                     optimization_times=[optimization_times optimization_time];
                     rois=compute_rois(tracks,action,min_width,min_height,alpha_c,alpha_s);
                     %rois=[];
                     clear detection_bboxes;
-                    BB=[];
-                else
-                    rois=[];
-                    action=0;
-                end
-                %merge overlapping rois
-                if size(rois,1)>0
+                    detection_bboxes=[];
+                    
+                    % DISCARD OR ADAPT INVALID ROIS
                     i=1;
                     while i<=size(rois,1)
                         if rois(i,3)<0 || rois(i,4)<0
@@ -192,7 +189,7 @@ for c1=1:length(max_items_)
                             continue
                         end
                         
-                        %merge overlapping bbxs
+                         %merge overlapping bbxs
                         j=i+1;
                         while j<=size(rois,1)
                             if rois(j,3)<0 || rois(j,4)<0
@@ -201,7 +198,7 @@ for c1=1:length(max_items_)
                             end
                             
                             %merge if bbs they overlap more than overlap_ration
-                            if bboxOverlapRatio(rois(i,:),rois(j,:))>overlap_ratio
+                            if bboxOverlapRatio(rois(i,1:4),rois(j,1:4)) >overlap_ratio
                                 upper_x=min(rois(i,1),rois(j,1));
                                 upper_y=min(rois(i,2),rois(j,2));
                                 down_x=max(rois(i,1)+rois(i,3),rois(j,1)+rois(j,3));
@@ -209,7 +206,7 @@ for c1=1:length(max_items_)
                                 new_width=down_x-upper_x;
                                 new_height=down_y-upper_y;
                                 
-                                rois(i,:)=[upper_x upper_y new_width new_height];
+                                rois(i,1:4)=[upper_x upper_y new_width new_height];
                                 rois(j,:)=[];
                                 continue;
                             end
@@ -249,7 +246,7 @@ for c1=1:length(max_items_)
                             height_after=frame_size(1)-y_after;
                         end
                         
-                        rois(i,:)=[x_after y_after width_after height_after];
+                        rois(i,1:4)=[x_after y_after width_after height_after];
                         
                         if width_after<min_width || height_after<min_height
                             rois(i,:)=[];
@@ -269,11 +266,14 @@ for c1=1:length(max_items_)
                     
                     time_=0;
                     for i=1:size(rois,1)
-                        image_bounding_box=imcrop(frame,rois(i,:));
+                        
+                        track_index=rois(i,5);
+                        image_bounding_box=imcrop(frame,rois(i,1:4));
                         tic
                         preBB = acfDetect(image_bounding_box, detector);
-                        time_=time_+toc;
-
+                        time_aux=toc;
+                        time_=time_+time_aux;
+                        
                         %Filter out detections with bad score
                         preBB = preBB(preBB(:, 5) > detThr, :);
                         
@@ -290,55 +290,219 @@ for c1=1:length(max_items_)
                             preBB(:,2) = preBB(:,2) + rois(i,2);
                         end
                         
-                        BB=[BB; preBB];
+                        detection_bboxes=preBB;
+                        detection_centroids=[detection_bboxes(:,1)+detection_bboxes(:,3)*0.5 detection_bboxes(:,2)+detection_bboxes(:,4)*0.5];
+                        
+                        %% Extract Dario's color features
+                        
+                        %Each line is a color histogram of each person. A BVT Histogram has 440
+                        %entries.
+                        clear BVTHistograms;
+                        BVTHistograms = zeros(size(detection_bboxes, 1), 440);
+                        
+                        j=1;
+                        while j<=size(BVTHistograms,1)
+                            
+                            %If the bbox is out of the image would have an error... this avoids
+                            %that but might not be the best solution
+                            
+                            beginX = detection_bboxes(j,1);
+                            endX = detection_bboxes(j,1)+detection_bboxes(j,3);
+                            beginY = detection_bboxes(j,2);
+                            endY = detection_bboxes(j,2)+detection_bboxes(j,4);
+                            
+                            
+                            if endX > size(frame, 2)
+                                endX = size(frame, 2);
+                            end
+                            
+                            if beginX <1;
+                                beginX = 1;
+                            end
+                            if endY > size(frame, 1)
+                                endY = size(frame, 1);
+                            end
+                            if beginY < 1;
+                                beginY = 1;
+                            end
+                            
+                            beginY = round(beginY);
+                            endY = round(endY);
+                            beginX = round(beginX);
+                            endX = round(endX);
+                            
+                            person = frame(beginY:endY,beginX:endX,:);
+                            
+                            if length(person)==0
+                                BVTHistograms(j,:)=[];
+                                detection_centroids(j,:)=[];
+                                continue;
+                            end
+                            
+                            [paddedImage, smallPaddedImage] = smartPadImageToBodyPartMaskSize(person);
+                            
+                            BVTHistograms(j,:) = extractBVT(smallPaddedImage,DefaultMask);
+                            j=j+1;
+                        end
+                        
+                        %% tracking
+                        
+                        %predict
+                        tracks(track_index)=predict(tracks(track_index));
+                        
+                        %associate
+                        [assignments, unassignedTracks, unassignedDetections ] = associateData( tracks(track_index), BVTHistograms, detection_centroids );
+                       
+
+                        %update
+                        tracks(track_index)=updateAssignedTracks(tracks(track_index),assignments,detection_centroids,detection_bboxes, BVTHistograms,min_width,min_height);
+                        tracks(track_index)=updateUnassignedTracks(tracks(track_index),unassignedTracks);
+                        
+%                         [tracks,nextId]=createNewTracks(tracks,...
+%                             unassignedDetections,...
+%                             detection_centroids,...
+%                             detection_bboxes,...
+%                             BVTHistograms,...
+%                             min_width,...
+%                             min_height, ...
+%                             nextId,...
+%                             state_transition_model,...
+%                             state_measurement_model,...
+%                             state_init_state_covariance,...
+%                             state_process_noise,...
+%                             state_measurement_noise);
+                        
+                        tracking_times=[tracking_times nan];
+                        
+                        
                     end
+                    %delete lost tracks
+                    tracks=deleteLostTracks(tracks,...
+                        invisibleForTooLong,...
+                        frame_size);
+                    
                     detection_times=[detection_times time_];
-                end
-                
-                % full window detector
-                if size(tracks,2)<1
+                    
+                else
+                    
+                    %% full window detector when we have no trackers
+                    
                     disp('full window')
-                    
-                    tic
-                    %preBB = detections(detections(:,1) == frame_number,:);
-                    
+                    tic 
                     preBB = acfDetect(frame, detector);
-                    
+                    toc
                     %Filter out detections with bad score
-                    BB = preBB(preBB(:, 5) > detThr, :);
+                    detection_bboxes = preBB(preBB(:, 5) > detThr, :);
                     detection_times=[detection_times nan];
+                    detection_centroids=[detection_bboxes(:,1)+detection_bboxes(:,3)*0.5 detection_bboxes(:,2)+detection_bboxes(:,4)*0.5];
+                    
+                    
+                    
+                    
+                    
+                    %% Extract Dario's color features
+                    
+                    %Each line is a color histogram of each person. A BVT Histogram has 440
+                    %entries.
+                    clear BVTHistograms;
+                    BVTHistograms = zeros(size(detection_bboxes, 1), 440);
+                    
+                    i=1;
+                    while i<=size(BVTHistograms,1)
+                        
+                        %If the bbox is out of the image would have an error... this avoids
+                        %that but might not be the best solution
+                        
+                        beginX = detection_bboxes(i,1);
+                        endX = detection_bboxes(i,1)+detection_bboxes(i,3);
+                        beginY = detection_bboxes(i,2);
+                        endY = detection_bboxes(i,2)+detection_bboxes(i,4);
+                        
+                        
+                        if endX > size(frame, 2)
+                            endX = size(frame, 2);
+                        end
+                        
+                        if beginX <1;
+                            beginX = 1;
+                        end
+                        if endY > size(frame, 1)
+                            endY = size(frame, 1);
+                        end
+                        if beginY < 1;
+                            beginY = 1;
+                        end
+                        
+                        beginY = round(beginY);
+                        endY = round(endY);
+                        beginX = round(beginX);
+                        endX = round(endX);
+                        
+                        person = frame(beginY:endY,beginX:endX,:);
+                        
+                        if length(person)==0
+                            BVTHistograms(i,:)=[];
+                            detection_centroids(i,:)=[];
+                            continue;
+                        end
+                        
+                        [paddedImage, smallPaddedImage] = smartPadImageToBodyPartMaskSize(person);
+                        
+                        BVTHistograms(i,:) = extractBVT(smallPaddedImage,DefaultMask);
+                        i=i+1;
+                    end
+                    
+                    %% tracking
+                    
+                    %predict
+                    tracks=predict(tracks);
+                    
+                    %associate
+                    [assignments, unassignedTracks, unassignedDetections ] = associateData( tracks, BVTHistograms, detection_centroids );
+                    
+                    %update
+                    tracks=updateAssignedTracks(tracks,assignments,detection_centroids,detection_bboxes, BVTHistograms,min_width,min_height);
+                    tracks=updateUnassignedTracks(tracks,unassignedTracks);
+                    tracks=deleteLostTracks(tracks,...
+                        invisibleForTooLong,...
+                        frame_size);
+                    [tracks,nextId]=createNewTracks(tracks,...
+                        unassignedDetections,...
+                        detection_centroids,...
+                        detection_bboxes,...
+                        BVTHistograms,...
+                        min_width,...
+                        min_height, ...
+                        nextId,...
+                        state_transition_model,...
+                        state_measurement_model,...
+                        state_init_state_covariance,...
+                        state_process_noise,...
+                        state_measurement_noise);
+                    
+                    tracking_times=[tracking_times nan];
+                    
+                    
                     
                 end
-                % full window detector
-                if length(BB)==0
-                    disp('full window')
-                    tic
-                    preBB = acfDetect(frame, detector);
-                    
-                    %Filter out detections with bad score
-                    BB = preBB(preBB(:, 5) > detThr, :);
-                    detection_times=[detection_times nan];
-                    
-                end
-                detection_bboxes=BB;
-                detection_centroids=[BB(:,1)+BB(:,3)*0.5 BB(:,2)+BB(:,4)*0.5];
                 
                 
                 
                 
                 
-                %% display results
+                
+%                 %% display results
 %                 %displayTrackingResults(obj,frame,tracks,detection_bboxes,rois);
 %                 
 %                 % attending regions
-%                 subplot(1,4,2)
+%                 subplot(1,3,1)
 %                 imshow(frame,'InitialMagnification','fit');
 %                 hold on;
-%                 set(gca,'Position',[0.25 0 0.25 1])
+%                 set(gca,'Position',[0. 0 0.33 1])
 %                 
 %                 for i=1:size(rois,1)
 %                     rectangle('Position',...
-%                         rois(i,:),...
+%                         rois(i,1:4),...
 %                         'EdgeColor',...
 %                         [0 0 1],...
 %                         'LineWidth',...
@@ -349,10 +513,10 @@ for c1=1:length(max_items_)
 %                 hold off
 %                 
 %                 % detections
-%                 subplot(1,4,3)
+%                 subplot(1,3,2)
 %                 imshow(frame,'InitialMagnification','fit');
 %                 hold on;
-%                 set(gca,'Position',[0.5 0 0.25 1]);
+%                 set(gca,'Position',[0.33 0 0.33 1]);
 %                 for i=1:size(detection_bboxes,1)
 %                     rectangle('Position',...
 %                         detection_bboxes(i,1:4),...
@@ -363,13 +527,13 @@ for c1=1:length(max_items_)
 %                     %text(detection_bboxes(i, 1), detection_bboxes(i, 2), ['id=' int2str(detection_bboxes(i, 5))], 'FontSize', 20);
 %                 end
 %                 drawnow
-%                     hold off
+%                 hold off
 %                 
 %                 % tracks
-%                 subplot(1,4,4)
+%                 subplot(1,3,3)
 %                 imshow(frame,'InitialMagnification','fit');
 %                 hold on;
-%                 set(gca,'Position',[0.75 0 0.25 1])
+%                 set(gca,'Position',[0.66 0 0.33 1])
 %                 uncertainties=zeros(size(tracks,2),1);
 %                 for i=1:size(tracks,2)
 %                     uncertainties(i)=det(tracks(i).stateKalmanFilter.StateCovariance(1:3,1:3));
@@ -396,88 +560,8 @@ for c1=1:length(max_items_)
 %                 end
 %                 drawnow
 %                 hold off
+%                 
                 
-                %% Extract Dario's color features
-                tic
-                %Each line is a color histogram of each person. A BVT Histogram has 440
-                %entries.
-                clear BVTHistograms;
-                BVTHistograms = zeros(size(detection_bboxes, 1), 440);
-                
-                i=1;
-                while i<=size(BVTHistograms,1)
-                    
-                    %If the bbox is out of the image would have an error... this avoids
-                    %that but might not be the best solution
-                    
-                    beginX = detection_bboxes(i,1);
-                    endX = detection_bboxes(i,1)+detection_bboxes(i,3);
-                    beginY = detection_bboxes(i,2);
-                    endY = detection_bboxes(i,2)+detection_bboxes(i,4);
-                    
-                    
-                    if endX > size(frame, 2)
-                        endX = size(frame, 2);
-                    end
-                    
-                    if beginX <1;
-                        beginX = 1;
-                    end
-                    if endY > size(frame, 1)
-                        endY = size(frame, 1);
-                    end
-                    if beginY < 1;
-                        beginY = 1;
-                    end
-                    
-                    beginY = round(beginY);
-                    endY = round(endY);
-                    beginX = round(beginX);
-                    endX = round(endX);
-                    
-                    person = frame(beginY:endY,beginX:endX,:);
-                    
-                    if length(person)==0
-                        BVTHistograms(i,:)=[];
-                        detection_centroids(i,:)=[];
-                        continue;
-                    end
-                    
-                    [paddedImage, smallPaddedImage] = smartPadImageToBodyPartMaskSize(person);
-                    
-                    BVTHistograms(i,:) = extractBVT(smallPaddedImage,DefaultMask);
-                    i=i+1;
-                end
-                
-                %% tracking
-                
-                %predict
-                tracks=predict(tracks);
-                
-                %associate
-                [assignments, unassignedTracks, unassignedDetections ] = associateData( tracks, BVTHistograms, detection_centroids );
-                
-                %update
-                tracks=updateAssignedTracks(tracks,assignments,detection_centroids,detection_bboxes, BVTHistograms,min_width,min_height);
-                tracks=updateUnassignedTracks(tracks,unassignedTracks);
-                tracks=deleteLostTracks(tracks,...
-                    invisibleForTooLong,...
-                    frame_size);
-                [tracks,nextId]=createNewTracks(tracks,...
-                    unassignedDetections,...
-                    detection_centroids,...
-                    detection_bboxes,...
-                    BVTHistograms,...
-                    min_width,...
-                    min_height, ...
-                    nextId,...
-                    state_transition_model,...
-                    state_measurement_model,...
-                    state_init_state_covariance,...
-                    state_process_noise,...
-                    state_measurement_noise);
-                
-                tracking_times=[tracking_times toc];
                 
                 %% store results
                 for i=1:length(tracks)
@@ -516,7 +600,7 @@ mean_average_tracking_times=mean(average_tracking_times,3);
 mean_average_total_times=mean_average_optimization_times+mean_average_detection_times+mean_average_tracking_times;
 mean_average_mot=mean(average_mot,3);
 
-save('teste.mat',...
+save('teste2.mat',...
     'average_optimization_times',...
     'average_detection_times',...
     'average_tracking_times',...

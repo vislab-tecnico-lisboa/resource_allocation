@@ -8,8 +8,8 @@ state_covariances=cell(length(action),1);
 if ~isempty(tracks)
     
 for i=1:length(action)
-    state_means(i,:)=tracks(action(i)+1).stateKalmanFilter.State';
-    state_covariances{i}=tracks(action(i)+1).stateKalmanFilter.StateCovariance;
+    state_means(i,:)=tracks(action(i)).stateKalmanFilter.State';
+    state_covariances{i}=tracks(action(i)).stateKalmanFilter.StateCovariance;
     center_x=state_means(i,1);
     center_y=state_means(i,2);
     width= (state_means(i,3) + alpha_s*sqrt(tracks(i).stateKalmanFilter.StateCovariance(3,3)))*min_width  + alpha_c*sqrt(tracks(i).stateKalmanFilter.StateCovariance(1,1));
@@ -17,7 +17,7 @@ for i=1:length(action)
     up_x=center_x-width*0.5;
     up_y=center_y-height*0.5;
         
-    roi=[up_x up_y width height];
+    roi=[up_x up_y width height double(action(i))];
     rois=[rois; roi];
 end
 
