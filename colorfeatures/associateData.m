@@ -4,7 +4,7 @@ function [ assignment, unassignedTracks, unassignedDetections ] = associateData(
 
 
 nTracks = size(trackers, 2);
-nDetections = size(bvtHists, 1);
+nDetections = size(detection_centroids, 1);
 
 if nDetections > 0 
 unassignedDetections = 1:nDetections;
@@ -28,23 +28,30 @@ costMat = zeros(nTracks, nDetections);
 
 for i=1:nTracks
    for j=1:nDetections
-       custo = bhattacharyya(trackers(i).colorHist, bvtHists(j, :));
-       dist = norm(detection_centroids(j,:)-trackers(i).stateKalmanFilter.State(1:2)');
        
-       if custo > 0.6
-       costMat(i, j) = 1000;
-       else
-       costMat(i, j) = custo; 
-       end
+       %custo = bhattacharyya(trackers(i).colorHist, bvtHists(j, :));
+       %dist = norm(detection_centroids(j,:)-trackers(i).stateKalmanFilter.State(1:2)');
+       dist = detection_centroids(j,:)'-trackers(i).stateKalmanFilter.State(1:2);
+
+       mahal_dist=sqrt( dist' * trackers(i).stateKalmanFilter.StateCovariance(1:2,1:2)  * dist);
+       
+%        if custo > 0.6
+%        costMat(i, j) = 1000;
+%        else
+%        costMat(i, j) = custo; 
+%        end
+       
+       costMat(i, j) = mahal_dist;
        
        % Warning this a DUMB validation gate. Replace by a decent one and
        % discard the associations with a score of 1000 in the end.
-       sc = trackers(i).stateKalmanFilter.State(3);
-       width = 40*sc;
        
-       if dist > width/2
-          costMat(i, j) = 1000; 
-       end
+       %sc = trackers(i).stateKalmanFilter.State(3);
+       %width = 40*sc;
+       
+       %if dist > width/2
+       %   costMat(i, j) = 1000; 
+       %end
    end
 end
 

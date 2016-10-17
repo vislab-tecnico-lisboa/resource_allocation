@@ -5,8 +5,8 @@ for i = 1:numAssignedTracks
     detectionIdx = assignments(i, 2);
     centroid = centroids(detectionIdx, :);
     bbox = bboxes(detectionIdx, :);
-    bvtHist = bvtHists(detectionIdx, :);
-    
+    %bvtHist = bvtHists(detectionIdx, :);
+    bvtHist=[];
     trackPosition = 0;
     
     for lol=1:size(tracks, 2)

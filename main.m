@@ -94,8 +94,6 @@ min_height=128;
 frame_size = size(imread([image_dir image_files(1).name]));
 %% Initialize pedestrian detector
 %detector=initializeDetector();
-%% Initialize trackers
-nextId = 1; % ID of the next track
 
 %% Detect moving objects, and track them across video frames.
 num_exp=100;
@@ -116,8 +114,10 @@ for c1=1:length(max_items_)
             optimization_times=[];
             tracking_times=[];
             results=[];
+            %% Initialize trackers
             tracks = initializeTracks(min_width,min_height); % Create an empty array of tracks.
-            
+            nextId = 1; % ID of the next track
+
             for frame_number=1:n_files
                 rois=[];
                 iteration_=iteration_+1;
@@ -293,60 +293,13 @@ for c1=1:length(max_items_)
                         detection_bboxes=preBB;
                         detection_centroids=[detection_bboxes(:,1)+detection_bboxes(:,3)*0.5 detection_bboxes(:,2)+detection_bboxes(:,4)*0.5];
                         
-                        %% Extract Dario's color features
                         
-                        %Each line is a color histogram of each person. A BVT Histogram has 440
-                        %entries.
-                        clear BVTHistograms;
-                        BVTHistograms = zeros(size(detection_bboxes, 1), 440);
-                        
-                        j=1;
-                        while j<=size(BVTHistograms,1)
-                            
-                            %If the bbox is out of the image would have an error... this avoids
-                            %that but might not be the best solution
-                            
-                            beginX = detection_bboxes(j,1);
-                            endX = detection_bboxes(j,1)+detection_bboxes(j,3);
-                            beginY = detection_bboxes(j,2);
-                            endY = detection_bboxes(j,2)+detection_bboxes(j,4);
-                            
-                            
-                            if endX > size(frame, 2)
-                                endX = size(frame, 2);
-                            end
-                            
-                            if beginX <1;
-                                beginX = 1;
-                            end
-                            if endY > size(frame, 1)
-                                endY = size(frame, 1);
-                            end
-                            if beginY < 1;
-                                beginY = 1;
-                            end
-                            
-                            beginY = round(beginY);
-                            endY = round(endY);
-                            beginX = round(beginX);
-                            endX = round(endX);
-                            
-                            person = frame(beginY:endY,beginX:endX,:);
-                            
-                            if length(person)==0
-                                BVTHistograms(j,:)=[];
-                                detection_centroids(j,:)=[];
-                                continue;
-                            end
-                            
-                            [paddedImage, smallPaddedImage] = smartPadImageToBodyPartMaskSize(person);
-                            
-                            BVTHistograms(j,:) = extractBVT(smallPaddedImage,DefaultMask);
-                            j=j+1;
-                        end
+
+
                         
                         %% tracking
-                        
+                        BVTHistograms=[];
+
                         %predict
                         tracks(track_index)=predict(tracks(track_index));
                         
@@ -377,9 +330,9 @@ for c1=1:length(max_items_)
                         
                     end
                     %delete lost tracks
-                    tracks=deleteLostTracks(tracks,...
-                        invisibleForTooLong,...
-                        frame_size);
+%                     tracks=deleteLostTracks(tracks,...
+%                         invisibleForTooLong,...
+%                         frame_size);
                     
                     detection_times=[detection_times time_];
                     
@@ -492,9 +445,9 @@ for c1=1:length(max_items_)
                 
                 
 %                 %% display results
-%                 %displayTrackingResults(obj,frame,tracks,detection_bboxes,rois);
-%                 
-%                 % attending regions
+                %displayTrackingResults(obj,frame,tracks,detection_bboxes,rois);
+                
+                % attending regions
 %                 subplot(1,3,1)
 %                 imshow(frame,'InitialMagnification','fit');
 %                 hold on;
@@ -560,7 +513,7 @@ for c1=1:length(max_items_)
 %                 end
 %                 drawnow
 %                 hold off
-%                 
+                
                 
                 
                 %% store results

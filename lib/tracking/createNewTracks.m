@@ -18,8 +18,8 @@ for i = 1:size(centroids, 1)
     
     centroid = centroids(i,:);
     bbox = bboxes(i, :);
-    colorHist = colorHists(i,:);
-    
+    %colorHist = colorHists(i,:);
+    colorHist=[];
     % Create a Kalman filter object for centroids.
     % Create a Kalman filter object.
 %    stateKalmanFilter = configureKalmanFilter('ConstantVelocity', ...
