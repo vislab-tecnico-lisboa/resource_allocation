@@ -69,7 +69,7 @@ int main(int argc, char** argv)
         std::vector<int>* explored_actions(new std::vector<int>);
         std::vector<int>* explored_nodes(new std::vector<int>);
 
-        tracking::MultipleAction mult_action=uct.run(belief,explored_actions,explored_nodes);
+        tracking::MultipleAction mult_action=uct.random(belief,explored_actions,explored_nodes);
 
     }
 

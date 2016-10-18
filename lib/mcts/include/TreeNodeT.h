@@ -122,7 +122,6 @@ public:
         return add_child_with_action( actions[children.size()],node_id_ );
     }
 
-
     //--------------------------------------------------------------
     // expand by adding a single child
     TreeNodeT* expand(const Action& new_action)

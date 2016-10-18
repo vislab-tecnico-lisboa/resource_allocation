@@ -78,7 +78,7 @@ state_measurement_noise=[...
 %state_measurement_noise = state_measurement_noise;
 
 %% optimization parameters
-action_mode=0; %( 0 -> normal, 1->random)
+action_mode=1; %( 0 -> normal, 1->random)
 max_items_=[4 3 2 1];             % max regions to be process
 capacity_constraints_=[1.0 0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1]; % percentage of image to be process at each time instant
 
@@ -97,11 +97,11 @@ frame_size = size(imread([image_dir image_files(1).name]));
 %detector=initializeDetector();
 
 %% Detect moving objects, and track them across video frames.
-num_exp=100;
-average_detection_times=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
-average_optimization_times=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
-average_tracking_times=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
-average_mot=zeros(length(max_items_),length(capacity_constraints_),num_exp,14);
+num_exp=30;
+average_detection_times_random=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
+average_optimization_times_random=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
+average_tracking_times_random=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
+average_mot_random=zeros(length(max_items_),length(capacity_constraints_),num_exp,14);
 iteration_=0;
 total_iterations=length(max_items_)*length(capacity_constraints_)*num_exp*n_files;
 
@@ -135,7 +135,6 @@ for c1=1:length(max_items_)
                     %predict
                     tracks=predict(tracks);
                     
-                    
                     if max_items<size(tracks,2)
                         optimization_=initializeMCTS(...
                             frame_size(2),...
@@ -161,7 +160,6 @@ for c1=1:length(max_items_)
                     end
                     
                     % Get action
-                    
                     [action,optimization_time,explored_actions,explored_nodes]=compute_action(tracks,optimization_,alpha_c,alpha_s);
                     
                     
@@ -408,6 +406,7 @@ for c1=1:length(max_items_)
                         i=i+1;
                     end
                     
+
                     %% tracking
                     
                     %predict
@@ -447,10 +446,10 @@ for c1=1:length(max_items_)
                 
                 
                 
-%                 %% display results
+                %% display results
                 %displayTrackingResults(obj,frame,tracks,detection_bboxes,rois);
                 
-                % attending regions
+                %attending regions
 %                 subplot(1,3,1)
 %                 imshow(frame,'InitialMagnification','fit');
 %                 hold on;
@@ -540,27 +539,27 @@ for c1=1:length(max_items_)
             %   3 - The benchmark directory
             allMets = evaluateTracking('all.txt', 'data/res/', 'data/train/');
             %MOTA = allMets.bmark2d(12);
-            average_mot(c1,c2,exp,:)=allMets.bmark2d;
-            average_optimization_times(c1,c2,exp,:)=mean(optimization_times);
-            average_detection_times(c1,c2,exp,:)=nanmean(detection_times);
-            average_tracking_times(c1,c2,exp,:)=mean(tracking_times);
+            average_mot_random(c1,c2,exp,:)=allMets.bmark2d;
+            average_optimization_times_random(c1,c2,exp,:)=mean(optimization_times);
+            average_detection_times_random(c1,c2,exp,:)=nanmean(detection_times);
+            average_tracking_times_random(c1,c2,exp,:)=mean(tracking_times);
         end
         %end runs
     end
     %end c2 param
 end
 %end c1 param
-mean_average_optimization_times=mean(average_optimization_times,3);
-mean_average_detection_times=mean(average_detection_times,3);
-mean_average_tracking_times=mean(average_tracking_times,3);
+mean_average_optimization_times=mean(average_optimization_times_random,3);
+mean_average_detection_times=mean(average_detection_times_random,3);
+mean_average_tracking_times=mean(average_tracking_times_random,3);
 mean_average_total_times=mean_average_optimization_times+mean_average_detection_times+mean_average_tracking_times;
-mean_average_mot=mean(average_mot,3);
+mean_average_mot=mean(average_mot_random,3);
 
-save('teste2.mat',...
-    'average_optimization_times',...
-    'average_detection_times',...
-    'average_tracking_times',...
-    'average_mot',...
+save('random_0_5_0_5.mat',...
+    'average_optimization_times_random',...
+    'average_detection_times_random',...
+    'average_tracking_times_random',...
+    'average_mot_random',...
     'num_exp',...
     'max_items_',...
     'capacity_constraints_',...

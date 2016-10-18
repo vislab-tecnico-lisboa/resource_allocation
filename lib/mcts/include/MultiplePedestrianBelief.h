@@ -133,7 +133,7 @@ public:
 
 
     // whether or not this belief is terminal (reached end)
-    bool is_terminal(const MultipleAction & action) {
+    bool is_terminal(const  MultipleAction & action) {
 
         float area=0;
 

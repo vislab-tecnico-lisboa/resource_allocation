@@ -35,7 +35,7 @@ std::stack<clock_t> tictoc_stack;
 double max_targets;
 double total_area;
 double max_area_ratio;
-
+int action_mode;
 void tic() {
     tictoc_stack.push(clock());
 }
@@ -60,9 +60,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     {
         // Check parameters
         //std::cout << "nrhs: " << nrhs << std::endl;
-        if(nrhs!=9)
+        if(nrhs!=10)
         {
-            mexErrMsgTxt("wrong inputs number (should be 8)");
+            mexErrMsgTxt("wrong inputs number (should be 9)");
         }
         double width=*(double *) mxGetPr(prhs[1]);
         double height=*(double *) mxGetPr(prhs[2]);
@@ -72,7 +72,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         double min_height=*(double *) mxGetPr(prhs[6]);
         double max_simulation_time_millis=*(double *) mxGetPr(prhs[7]);
         double simulation_depth=*(double *) mxGetPr(prhs[8]);
-
+        double action_mode_=*(double *) mxGetPr(prhs[9]);
+        action_mode=(int)action_mode_;
+        std::cout << "action_mode: " << action_mode << std::endl;
+        
 
         /*std::cout << "width:"<<width << std::endl;
         std::cout << "height:"<<height << std::endl;
@@ -163,9 +166,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         std::vector<int>* explored_nodes(new std::vector<int>);
         
         tracking::MultipleBelief<tracking::Belief> belief(pedestrian_beliefs,max_targets,total_area,max_area_ratio);
-
-        tic();
-        tracking::MultipleAction mult_action = mcts_->run(belief,explored_actions,explored_nodes);
+        tracking::MultipleAction mult_action;
+        if(action_mode==0)
+        {
+            std::cout << "action NORMAL mode" << std::endl;
+         	tic();
+            mult_action = mcts_->run(belief,explored_actions,explored_nodes);
+        }else if(action_mode==1)
+        {
+            std::cout << "action RANDOM mode" << std::endl;
+        	tic();
+            mult_action = mcts_->random(belief,explored_actions,explored_nodes);
+        }
         double time_elapsed=toc_();
         //std::cout << "time elapsed:" << time_elapsed << std::endl;
         plhs[0]=MxArray(mult_action.attend);
