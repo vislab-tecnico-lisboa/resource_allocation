@@ -234,6 +234,26 @@ public:
         return true;
     }
 
+    // get a random action, return false if no actions found
+    bool get_greedy_action(MultipleAction& action) const {
+        // This should be more clever
+
+        float best_so_far=-std::numeric_limits<float>::max();
+
+        for(int i=0; i<actions.size();++i)
+        {
+            float expected_best=evaluateAttendingAction(actions[i]);
+            if(expected_best>best_so_far)
+            {
+                best_so_far=expected_best;
+                action=actions[i];
+            }
+
+        }
+
+        return true;
+    }
+
 
     // evaluate this state and return a vector of rewards (for each agent)
     const float evaluate() const  {
@@ -252,7 +272,7 @@ public:
         float reward=0.0;
         for(int i=0; i<action.attend.size();++i)
         {
-            // Bigger entropy should be better
+            // prioritizing actions to bigger entropy regions should be better
             reward+=beliefs[action.attend[i]].entropy();
         }
 

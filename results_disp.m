@@ -1,12 +1,30 @@
 close all
-load('teste2.mat')
+load('mcts_alpha_0_5.mat')
+load('random_0_5_0_5.mat')
+load('greedy_0_5_0_5.mat')
 load('fullwindow.mat')
 
+% MCTS
 mean_average_optimization_times=median(average_optimization_times,3);
 mean_average_detection_times=median(average_detection_times,3);
 mean_average_tracking_times=median(average_tracking_times,3);
 mean_average_total_times=mean_average_optimization_times+mean_average_detection_times+mean_average_tracking_times;
 mean_average_mot=mean(average_mot,3);
+
+% RANDOM
+mean_average_optimization_times_random=median(average_optimization_times_random,3);
+mean_average_detection_times_random=median(average_detection_times_random,3);
+mean_average_tracking_times_random=median(average_tracking_times_random,3);
+mean_average_total_times_random=mean_average_optimization_times_random+mean_average_detection_times_random+mean_average_tracking_times_random;
+mean_average_mot_random=mean(average_mot_random,3);
+
+% GREEDY
+mean_average_optimization_times_greedy=median(average_optimization_times_greedy,3);
+mean_average_detection_times_greedy=median(average_detection_times_greedy,3);
+mean_average_tracking_times_greedy=median(average_tracking_times_greedy,3);
+mean_average_total_times_greedy=mean_average_optimization_times_greedy+mean_average_detection_times_greedy+mean_average_tracking_times_greedy;
+mean_average_mot_greedy=mean(average_mot_greedy,3);
+
 
 for c1=1:length(max_items_)
     str=sprintf('max items: %d',max_items_(c1));
@@ -80,6 +98,12 @@ std_average_motp_fullwindow=std(average_mot_fullwindow(:,motp_index),0,1);
 mean_average_motp=mean(average_mot(:,:,:,motp_index),3);
 std_average_motp=std(average_mot(:,:,:,motp_index),0,3);
 
+mean_average_motp_random=mean(average_mot_random(:,:,:,motp_index),3);
+std_average_motp_random=std(average_mot_random(:,:,:,motp_index),0,3);
+
+mean_average_motp_greedy=mean(average_mot_greedy(:,:,:,motp_index),3);
+std_average_motp_greedy=std(average_mot_greedy(:,:,:,motp_index),0,3);
+
 figure(3)
 
 errorbar(capacity_constraints_,...
@@ -89,6 +113,9 @@ errorbar(capacity_constraints_,...
 hold on
 for c1=1:length(max_items_)
     errorbar(capacity_constraints_,mean_average_motp(c1,:),std_average_motp(c1,:))
+    errorbar(capacity_constraints_,mean_average_motp_random(c1,:),std_average_motp_random(c1,:),'--')
+    errorbar(capacity_constraints_,mean_average_motp_greedy(c1,:),std_average_motp_greedy(c1,:),'x')
+
     hold on
 end
 xlim([0.09 1.01])
@@ -107,6 +134,9 @@ hold on
 
 for c2=1:4
     errorbar(max_items_,mean_average_motp(:,c2),std_average_motp(:,c2))
+    errorbar(max_items_,mean_average_motp_random(:,c2),std_average_motp_random(:,c2),'--')
+    errorbar(max_items_,mean_average_motp_greedy(:,c2),std_average_motp_greedy(:,c2),'x')
+
     hold on
 end
 set(gca,'XTick',1:4)

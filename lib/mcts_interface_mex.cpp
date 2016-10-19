@@ -177,6 +177,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             std::cout << "action RANDOM mode" << std::endl;
         	tic();
             mult_action = mcts_->random(belief,explored_actions,explored_nodes);
+        }else if(action_mode==2)
+        {
+            std::cout << "action GREEDY mode" << std::endl;
+        	tic();
+            mult_action = mcts_->greedy(belief,explored_actions,explored_nodes);
         }
         double time_elapsed=toc_();
         //std::cout << "time elapsed:" << time_elapsed << std::endl;

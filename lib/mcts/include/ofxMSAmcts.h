@@ -33,7 +33,7 @@ public:
     unsigned int simulation_depth;	// how many ticks (frames) to run simulation for
 
     //--------------------------------------------------------------
-    UCT(unsigned int max_millis_=0, unsigned int simulation_depth_=10, float uct_k_=10) :
+    UCT(unsigned int max_millis_=0, unsigned int simulation_depth_=10, float uct_k_=3) :
         max_millis( max_millis_ ),
         simulation_depth( simulation_depth_),
         uct_k(uct_k_)
@@ -294,7 +294,6 @@ public:
 
         }
 
-        std::cout << "vou entrar no while" << std::endl;
         while(1)
         {
             int action_number = rand() % number_of_possible_actions;         // v1 in the range 0 to 99
@@ -306,7 +305,117 @@ public:
                 break;
             }
         }
-        std::cout << "vou sair do while" << std::endl;
+
+        std::cout << "number of possible actions:"<<number_of_possible_actions<<std::endl;
+        // return best node's action
+        if(best_node)
+        {
+            best_action=best_node->get_action();
+        }
+        else
+        {
+            std::cout << "hum" << std::endl;
+        }
+
+        delete root_node;
+        std::cout << "best_action: "<< best_action << std::endl;
+        return best_action;
+
+    }
+
+
+    Action greedy(const Belief& current_belief, std::vector<int>* explored_actions = nullptr, std::vector<int>* explored_nodes= nullptr) {
+        // initialize timer
+        explored_nodes->push_back(0);
+
+        int node_id=0;
+        // initialize root TreeNode with current state
+        TreeNode* root_node(new TreeNode(current_belief));
+        TreeNode* node=root_node;
+        Action best_action;
+
+        TreeNode* best_node = NULL;
+        // iterate
+        iterations = 0;
+        while(!node->is_fully_expanded())
+        {
+
+            // 1. SELECT. Start at root
+
+
+            // 2. EXPAND by adding a single child (if not terminal or not fully expanded)
+            if(!node->is_terminal())
+            {
+                node = node->expand(++node_id);
+
+                // add to history
+                if(explored_actions)
+                {
+                    if(node->get_parent())
+                    {
+                        int parent_node_id=node->get_parent()->get_id()+1;
+                        int action_id=node->get_action().id;
+                        int depth=node->get_depth();
+                        //std::cout << parent_node_id << " " << node->get_id() << " " << action_id << std::endl;
+                        explored_actions->push_back(action_id);
+                        explored_nodes->push_back(parent_node_id);
+                    }
+                }
+            }
+            else
+            {
+                std::cout << "NO POSSIBLE ACTIONS"<< std::endl;
+                return best_action;
+            }
+
+            iterations++;
+            node=root_node;
+        }
+
+
+        std::cout << "total_iterations: "<< iterations << std::endl;
+
+        node=root_node;
+        int number_of_possible_actions=node->get_num_children();
+        bool impossible=true;
+
+        for(int i=0;i<number_of_possible_actions;++i)
+        {
+            // If there is at least one feasible node
+            if(!node->get_child(i)->is_terminal())
+            {
+                impossible=false;
+                break;
+            }
+        }
+        if(impossible)
+        {
+            return best_action;
+
+        }
+
+        // Select best greedy action
+        float best_reward= -std::numeric_limits<float>::max();
+
+        for(int i=0;i<number_of_possible_actions;++i)
+        {
+
+            if(!node->get_child(i)->is_terminal())
+            {
+                float reward=node->get_child(i)->get_value_node();
+                //std::cout << "  reward:"<< reward << std::endl;
+
+                if(reward>best_reward)
+                {
+                    best_reward=reward;
+                    best_node=node->get_child(i);
+                }
+                /*else
+                {
+                    std::cout << "best reward:"<< best_reward << std::endl;
+                }*/
+            }
+        }
 
         std::cout << "number of possible actions:"<<number_of_possible_actions<<std::endl;
         // return best node's action

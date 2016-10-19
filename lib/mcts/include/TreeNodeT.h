@@ -132,9 +132,12 @@ public:
 
     //--------------------------------------------------------------
     void update(float & reward) {
-        this->value += reward;
+        //this->value += reward;
+        this->value = reward; // BEST REWARD AND NOT THE ACCUMULATED
         num_visits++;
     }
+
+
 
     //--------------------------------------------------------------
     // GETTERS
@@ -160,6 +163,8 @@ public:
 
     // accumulated value (wins)
     float get_value() const { return value; }
+
+    float get_value_node() const { return belief.evaluate();}
 
     // how deep the TreeNode is in the tree
     int get_depth() const { return depth; }

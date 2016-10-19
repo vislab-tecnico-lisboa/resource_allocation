@@ -83,7 +83,7 @@ max_items_=[4 3 2 1];             % max regions to be process
 capacity_constraints_=[1.0 0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1]; % percentage of image to be process at each time instant
 
 max_simulation_time_millis=50;
-simulation_depth=1;
+simulation_depth=2;
 alpha_c=0.5;
 alpha_s=0.5;
 overlap_ratio=0.5;
@@ -556,7 +556,7 @@ mean_average_tracking_times=mean(average_tracking_times,3);
 mean_average_total_times=mean_average_optimization_times+mean_average_detection_times+mean_average_tracking_times;
 mean_average_mot=mean(average_mot,3);
 
-save('teste2.mat',...
+save('mcts_time_0_5_alpha_0_5_uct_3.mat',...
     'average_optimization_times',...
     'average_detection_times',...
     'average_tracking_times',...
