@@ -261,7 +261,7 @@ public:
         for(int i=0; i<beliefs.size();++i)
         {
             //negative entropy (closer to zero is better)
-            reward+=-beliefs[i].entropy();
+            reward+=10000.0-beliefs[i].entropy();
         }
 
         return reward;

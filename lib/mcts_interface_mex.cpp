@@ -59,10 +59,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     if (!strcmp("new", cmd))
     {
         // Check parameters
-        //std::cout << "nrhs: " << nrhs << std::endl;
-        if(nrhs!=10)
+        std::cout << "nrhs: " << nrhs << std::endl;
+        if(nrhs!=11)
         {
-            mexErrMsgTxt("wrong inputs number (should be 9)");
+            mexErrMsgTxt("wrong inputs number (should be 10)");
         }
         double width=*(double *) mxGetPr(prhs[1]);
         double height=*(double *) mxGetPr(prhs[2]);
@@ -72,10 +72,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         double min_height=*(double *) mxGetPr(prhs[6]);
         double max_simulation_time_millis=*(double *) mxGetPr(prhs[7]);
         double simulation_depth=*(double *) mxGetPr(prhs[8]);
-        double action_mode_=*(double *) mxGetPr(prhs[9]);
+        double gamma=*(double *) mxGetPr(prhs[9]);
+        double action_mode_=*(double *) mxGetPr(prhs[10]);
         action_mode=(int)action_mode_;
         std::cout << "action_mode: " << action_mode << std::endl;
         
+        std::cout << "gamma: " << gamma << std::endl;
 
         /*std::cout << "width:"<<width << std::endl;
         std::cout << "height:"<<height << std::endl;
@@ -92,7 +94,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         //std::cout <<"capacity_percentage:" << capacity_percentage << std::endl;
         msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> *mcts_= new msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction>(
                 (unsigned int) max_simulation_time_millis, 
-                (unsigned int) simulation_depth);
+                (unsigned int) simulation_depth,
+                (float)gamma);
 
         plhs[0] = convertPtr2Mat< msa::mcts::UCT<tracking::MultipleBelief<tracking::Belief>, tracking::MultipleAction> >(mcts_);
         

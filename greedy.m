@@ -78,7 +78,7 @@ state_measurement_noise=[...
 %state_measurement_noise = state_measurement_noise;
 
 %% optimization parameters
-action_mode=1; %( 0 -> normal, 1->random)
+action_mode=2; %( 0 -> normal, 1->random, 2 -> greedy)
 max_items_=[4 3 2 1];             % max regions to be process
 capacity_constraints_=[1.0 0.9 0.8 0.7 0.6 0.5 0.4 0.3 0.2 0.1]; % percentage of image to be process at each time instant
 gamma=0.8;
@@ -99,10 +99,10 @@ frame_size = size(imread([image_dir image_files(1).name]));
 
 %% Detect moving objects, and track them across video frames.
 num_exp=30;
-average_detection_times_random=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
-average_optimization_times_random=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
-average_tracking_times_random=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
-average_mot_random=zeros(length(max_items_),length(capacity_constraints_),num_exp,14);
+average_detection_times_greedy=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
+average_optimization_times_greedy=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
+average_tracking_times_greedy=zeros(length(max_items_),length(capacity_constraints_),num_exp,1);
+average_mot_greedy=zeros(length(max_items_),length(capacity_constraints_),num_exp,14);
 iteration_=0;
 total_iterations=length(max_items_)*length(capacity_constraints_)*num_exp*n_files;
 
@@ -540,27 +540,27 @@ for c1=1:length(max_items_)
             %   3 - The benchmark directory
             allMets = evaluateTracking('all.txt', 'data/res/', 'data/train/');
             %MOTA = allMets.bmark2d(12);
-            average_mot_random(c1,c2,exp,:)=allMets.bmark2d;
-            average_optimization_times_random(c1,c2,exp,:)=mean(optimization_times);
-            average_detection_times_random(c1,c2,exp,:)=nanmean(detection_times);
-            average_tracking_times_random(c1,c2,exp,:)=mean(tracking_times);
+            average_mot_greedy(c1,c2,exp,:)=allMets.bmark2d;
+            average_optimization_times_greedy(c1,c2,exp,:)=mean(optimization_times);
+            average_detection_times_greedy(c1,c2,exp,:)=nanmean(detection_times);
+            average_tracking_times_greedy(c1,c2,exp,:)=mean(tracking_times);
         end
         %end runs
     end
     %end c2 param
 end
 %end c1 param
-mean_average_optimization_times=mean(average_optimization_times_random,3);
-mean_average_detection_times=mean(average_detection_times_random,3);
-mean_average_tracking_times=mean(average_tracking_times_random,3);
+mean_average_optimization_times=mean(average_optimization_times_greedy,3);
+mean_average_detection_times=mean(average_detection_times_greedy,3);
+mean_average_tracking_times=mean(average_tracking_times_greedy,3);
 mean_average_total_times=mean_average_optimization_times+mean_average_detection_times+mean_average_tracking_times;
-mean_average_mot=mean(average_mot_random,3);
+mean_average_mot=mean(average_mot_greedy,3);
 
-save('random_0_5_0_5.mat',...
-    'average_optimization_times_random',...
-    'average_detection_times_random',...
-    'average_tracking_times_random',...
-    'average_mot_random',...
+save('greedy_0_5_0_5.mat',...
+    'average_optimization_times_greedy',...
+    'average_detection_times_greedy',...
+    'average_tracking_times_greedy',...
+    'average_mot_greedy',...
     'num_exp',...
     'max_items_',...
     'capacity_constraints_',...

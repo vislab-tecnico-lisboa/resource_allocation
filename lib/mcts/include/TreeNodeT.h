@@ -132,8 +132,8 @@ public:
 
     //--------------------------------------------------------------
     void update(float & reward) {
-        //this->value += reward;
-        this->value = reward; // BEST REWARD AND NOT THE ACCUMULATED
+        this->value += reward;
+        //this->value = reward; // BEST REWARD AND NOT THE ACCUMULATED
         num_visits++;
     }
 
@@ -208,7 +208,7 @@ private:
         child_node->action = new_action;
 
         // apply the new action to the state of the child TreeNode
-        child_node->belief.apply_action(new_action);
+        //child_node->belief.apply_action(new_action);
 
         // add to children
         children.push_back(Ptr(child_node));

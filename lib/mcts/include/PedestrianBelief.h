@@ -105,7 +105,7 @@ public:
 
     // apply action to state
     void apply_action(const Action& action)  {
-        //IT SHOULD FIRST OBSERVE AND THEN PREDICT
+        //IT SHOULD FIRST OBSERVE AND THEN PREDICT (why?)
         //std::cout << "     id: "<< id << " action: "<< action.attend<<  std::endl;
         if(action.attend)
         {
@@ -148,15 +148,15 @@ public:
     }
 
     // evaluate this state and return a vector of rewards (for each agent)
-    const float evaluate() const  {
+    /*const float evaluate() const  {
 
         // Negative entropy
-        float reward=-std::log(cv::determinant(covariance));
+        float reward=100000.0-std::log(cv::determinant(covariance));
 
         //std::cout << "  reward:" << reward << std::endl;
         return reward;
 
-    }
+    }*/
 
     // evaluate this state and return a vector of rewards (for each agent)
     const float entropy() const  {

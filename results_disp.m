@@ -1,5 +1,7 @@
 close all
 load('mcts_alpha_0_5.mat')
+
+%load('mcts_time_0_5_alpha_0_5_uct_3.mat')
 load('random_0_5_0_5.mat')
 load('greedy_0_5_0_5.mat')
 load('fullwindow.mat')
@@ -69,12 +71,12 @@ legend(legend_string)
 figure(2)
 
 legend_string={'S_{max}=1.0',...
-    'S_{max}=0.9',...
-    'S_{max}=0.8',...
     'S_{max}=0.7',...
+    'S_{max}=0.4',...
+    'S_{max}=0.1',...
     };
 
-for c2=1:4
+for c2=[1 4 7 10]
     errorbar(max_items_,mean_average_detection_time_gains(:,c2),std_average_detection_time_gains(:,c2))
     hold on
 end
@@ -113,13 +115,13 @@ errorbar(capacity_constraints_,...
 hold on
 for c1=1:length(max_items_)
     errorbar(capacity_constraints_,mean_average_motp(c1,:),std_average_motp(c1,:))
-    errorbar(capacity_constraints_,mean_average_motp_random(c1,:),std_average_motp_random(c1,:),'--')
-    errorbar(capacity_constraints_,mean_average_motp_greedy(c1,:),std_average_motp_greedy(c1,:),'x')
+    %errorbar(capacity_constraints_,mean_average_motp_random(c1,:),std_average_motp_random(c1,:),'--')
+    %errorbar(capacity_constraints_,mean_average_motp_greedy(c1,:),std_average_motp_greedy(c1,:),'x')
 
     hold on
 end
 xlim([0.09 1.01])
-ylabel('MOTP','FontSize',fontsize)
+ylabel('MOTP (%)','FontSize',fontsize)
 xlabel('S_{max}','FontSize',fontsize)
 set(gca,'fontsize',fontsize);
 set(gcf, 'Color', [1,1,1]);
@@ -132,17 +134,17 @@ errorbar(max_items_,...
 
 hold on
 
-for c2=1:4
+for c2=[1 4 7 10]
     errorbar(max_items_,mean_average_motp(:,c2),std_average_motp(:,c2))
-    errorbar(max_items_,mean_average_motp_random(:,c2),std_average_motp_random(:,c2),'--')
-    errorbar(max_items_,mean_average_motp_greedy(:,c2),std_average_motp_greedy(:,c2),'x')
+    %errorbar(max_items_,mean_average_motp_random(:,c2),std_average_motp_random(:,c2),'--')
+    %errorbar(max_items_,mean_average_motp_greedy(:,c2),std_average_motp_greedy(:,c2),'x')
 
     hold on
 end
 set(gca,'XTick',1:4)
 xlim([0.9 4.1])
 %set(gca,'XTickLabel',max_items_)
-ylabel('MOTP','FontSize',fontsize)
+ylabel('MOTP (%)','FontSize',fontsize)
 xlabel('K_{max}','FontSize',fontsize)
 set(gca,'fontsize',fontsize);
 set(gcf, 'Color', [1,1,1]);

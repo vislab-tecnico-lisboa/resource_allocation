@@ -28,27 +28,28 @@ private:
 
 public:
     float uct_k;					// k value in UCT function. default = sqrt(2)
+    float gamma;                    // discount factor
     unsigned int max_iterations;	// do a maximum of this many iterations (0 to run till end)
     unsigned int max_millis;		// run for a maximum of this many milliseconds (0 to run till end)
     unsigned int simulation_depth;	// how many ticks (frames) to run simulation for
 
     //--------------------------------------------------------------
-    UCT(unsigned int max_millis_=0, unsigned int simulation_depth_=10, float uct_k_=3) :
+    UCT(unsigned int max_millis_=0, unsigned int simulation_depth_=10, float uct_k_=3, float gamma_=0.9) :
         max_millis( max_millis_ ),
         simulation_depth( simulation_depth_),
-        uct_k(uct_k_)
+        uct_k(uct_k_),
+        gamma(gamma_)
     {
-        std::cout << uct_k << std::endl;
-
+        std::cout << "max_millis:"<<max_millis << std::endl;
+        std::cout << "simulation_depth:"<<simulation_depth << std::endl;
+        std::cout << "uct_k:"<<uct_k << std::endl;
+        std::cout << "gamma:"<<gamma << std::endl;
     }
 
     //--------------------------------------------------------------
     const LoopTimer & get_timer() const {
         return timer;
     }
-
-
-
 
     //--------------------------------------------------------------
     // get best (immediate) child for given TreeNode based on uct score
@@ -103,6 +104,38 @@ public:
     }
 
 
+    float rollout(Belief belief, int depth)
+    {
+        float reward=0.0;
+        float discount=1.0;
+
+        Action action;
+        while(depth<simulation_depth)
+        {
+            if(belief.is_terminal()) break;
+
+            if(belief.get_random_action(action))
+            {
+                // Apply action
+                belief.apply_action(action);
+
+                // Collect reward
+                reward+=(discount*belief.evaluate());
+
+                // Update discount
+                discount*=gamma;
+            }
+            else
+            {
+                break;
+            }
+
+            depth+=1;
+        }
+
+        // get reward for leaf node
+        return reward;
+    }
 
     //--------------------------------------------------------------
     Action run(const Belief& current_belief, std::vector<int>* explored_actions = nullptr, std::vector<int>* explored_nodes= nullptr) {
@@ -126,14 +159,16 @@ public:
             TreeNode* node=root_node;
             while(!node->is_terminal() && node->is_fully_expanded())
             {
+                //std::cout << "dig down:" <<node->get_depth() << std::endl;
                 node = get_best_uct_child(node, uct_k);
                 assert(node);	// sanity check
             }
 
-            // std::cout << "Expand" << std::endl;
             // 2. EXPAND by adding a single child (if not terminal or not fully expanded)
-            if(!node->is_fully_expanded() && !node->is_terminal())
+            if(!node->is_fully_expanded() && !node->is_terminal()&& node->get_depth()<=simulation_depth)
             {
+                //std::cout << "expand:"<<node->get_depth() << std::endl;
+
                 node = node->expand(++node_id);
 
                 // add to history
@@ -141,52 +176,38 @@ public:
                 {
                     if(node->get_parent())
                     {
-                        int parent_node_id=node->get_parent()->get_id()+1;
                         int action_id=node->get_action().id;
-                        int depth=node->get_depth();
-                        //std::cout << parent_node_id << " " << node->get_id() << " " << action_id << std::endl;
                         explored_actions->push_back(action_id);
+                    }
+                }
+                if(explored_nodes)
+                {
+                    if(node->get_parent())
+                    {
+                        int parent_node_id=node->get_parent()->get_id()+1;
                         explored_nodes->push_back(parent_node_id);
                     }
                 }
             }
 
             // 3. SIMULATE (if not terminal)
-            //std::cout << "SIMULATING"<< std::endl;
-            // Copy the belief
-            Belief belief(node->get_belief());
-            //std::cout << "Simulate"<< std::endl;
-            // HA AQUI BUG!!! (AS ACÇOES MUDAM LA DENTRO; DEVIA SER UMA HARD COPY)
-
+            float reward=0.0;
             if(!node->is_terminal())
             {
-                Action action;
-                for(int t = 0; t < simulation_depth; t++)
-                {
-                    if(belief.is_terminal()) break;
-
-                    if(belief.get_random_action(action))
-                    {
-                        belief.apply_action(action);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
+                // Copy the belief
+                Belief belief(node->get_belief());
+                reward=rollout(belief, node->get_depth());
             }
 
-            // get reward for leaf node
-            float reward = belief.evaluate();
-
             // 4. BACK PROPAGATION
-            int i=0;
             while(node) {
+                reward*=gamma;
                 node->update(reward);
                 node = node->get_parent();
             }
 
             TreeNode* most_visited=get_most_visited_child(root_node);
+
             // find most visited child that is not terminal
             if(most_visited)
                 best_node = most_visited;
@@ -203,7 +224,7 @@ public:
 
         }
 
-        std::cout << "total_iterations: "<< iterations << std::endl;
+        //std::cout << "total_iterations: "<< iterations << std::endl;
 
         Action best_action;
         // return best node's action
