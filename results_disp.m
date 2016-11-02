@@ -1,31 +1,10 @@
 close all
-load('mcts_alpha_0_5.mat')
+load('mcts_time_0_5_alpha_0_5_uct_3.mat')
 
 %load('mcts_time_0_5_alpha_0_5_uct_3.mat')
 load('random_0_5_0_5.mat')
 load('greedy_0_5_0_5.mat')
 load('fullwindow.mat')
-
-% MCTS
-mean_average_optimization_times=median(average_optimization_times,3);
-mean_average_detection_times=median(average_detection_times,3);
-mean_average_tracking_times=median(average_tracking_times,3);
-mean_average_total_times=mean_average_optimization_times+mean_average_detection_times+mean_average_tracking_times;
-mean_average_mot=mean(average_mot,3);
-
-% RANDOM
-mean_average_optimization_times_random=median(average_optimization_times_random,3);
-mean_average_detection_times_random=median(average_detection_times_random,3);
-mean_average_tracking_times_random=median(average_tracking_times_random,3);
-mean_average_total_times_random=mean_average_optimization_times_random+mean_average_detection_times_random+mean_average_tracking_times_random;
-mean_average_mot_random=mean(average_mot_random,3);
-
-% GREEDY
-mean_average_optimization_times_greedy=median(average_optimization_times_greedy,3);
-mean_average_detection_times_greedy=median(average_detection_times_greedy,3);
-mean_average_tracking_times_greedy=median(average_tracking_times_greedy,3);
-mean_average_total_times_greedy=mean_average_optimization_times_greedy+mean_average_detection_times_greedy+mean_average_tracking_times_greedy;
-mean_average_mot_greedy=mean(average_mot_greedy,3);
 
 
 for c1=1:length(max_items_)
@@ -44,8 +23,8 @@ end
 %% plots
 
 average_detection_time_gains=0.25./average_detection_times(:,:,:);
-mean_average_detection_time_gains=mean(average_detection_time_gains(:,:,:),3);
-std_average_detection_time_gains=std(average_detection_time_gains(:,:,:),0,3);
+mean_average_detection_time_gains=mean(average_detection_time_gains(:,:,:),4);
+std_average_detection_time_gains=std(average_detection_time_gains(:,:,:),0,4);
 fontsize=40;
 
 figure(1)
